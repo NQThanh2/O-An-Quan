@@ -9,6 +9,9 @@ const params  = new URLSearchParams(window.location.search);
 let state        = null;
 let selectedCell = null;
 let stompClient  = null;
+let roomSubscription = null;
+let roomSubscriptionCode = null;
+let reconnectSocketTimer = null;
 let animating    = false;
 let pendingTimer = null;
 let aiTimer      = null;
@@ -20,6 +23,7 @@ const T_SETTLE  = 65;
 const T_PICKUP  = 200;
 const T_CAPTURE = 640;
 const T_AI      = 900;
+const WS_ENDPOINT = '/ws';
 
 let mySide     = params.get('side')  || localStorage.getItem(`gameSide_${gameId}`)  || '';
 let playerName = params.get('name')  || localStorage.getItem(`playerName_${gameId}`) || '';
@@ -65,6 +69,7 @@ function applyState(newState, shouldAnimate = true) {
 
   if (!canAnim) {
     state = newState; selectedCell = null;
+    ensureRoomSubscription();
     render(); if (newState.message) showToast(newState.message);
     triggerAi(); return;
   }
@@ -76,8 +81,8 @@ function applyState(newState, shouldAnimate = true) {
   updateBanner('Đang rải quân...', 'Theo dõi từng viên sỏi.', '🎲', 'animating');
 
   runAnimation(oldState, steps)
-      .then(() => { state = newState; animating = false; render(); loadHistory(); if (newState.message) showToast(newState.message); triggerAi(); })
-      .catch(err => { console.error(err); state = newState; animating = false; render(); loadHistory(); triggerAi(); });
+      .then(() => { state = newState; animating = false; ensureRoomSubscription(); render(); loadHistory(); if (newState.message) showToast(newState.message); triggerAi(); })
+      .catch(err => { console.error(err); state = newState; animating = false; ensureRoomSubscription(); render(); loadHistory(); triggerAi(); });
 }
 
 /* ── Render ── */
@@ -119,6 +124,7 @@ function render() {
   renderBoard();
   updateButtons();
   updateHelper();
+  updateBoardHint();
   updateResultModal();
   updateMsgBox();
 }
@@ -193,6 +199,20 @@ function updateBanner(customTitle, customSub, customIcon, customType) {
   titleEl.textContent = title;
   subEl.textContent   = sub;
   badgeEl.textContent = badge;
+}
+
+
+function updateBoardHint() {
+  const hint = el('boardHint');
+  if (!hint || !state) return;
+  const side = effectiveSide();
+  if (state.phase === 'ENDED') hint.textContent = resultInfo().summary;
+  else if (state.phase === 'WAITING') hint.textContent = 'Chờ người chơi vào phòng';
+  else if (animating) hint.textContent = 'Đang rải quân từng ô';
+  else if (selectedCell !== null) hint.textContent = `Đã chọn ô ${selectedCell} · chọn hướng rải`;
+  else if (state.aiGame && state.currentTurn === 'B') hint.textContent = 'AI đang suy nghĩ';
+  else if (side && side !== state.currentTurn) hint.textContent = `Chờ Người ${state.currentTurn}`;
+  else hint.textContent = `Lượt Người ${state.currentTurn} · chọn ô sáng`;
 }
 
 function updateHelper() {
@@ -285,10 +305,15 @@ function cellClasses(cell) {
 
 function cellHtml(cell) {
   const isQuan = cell.index === 11 || cell.index === 5;
+  const quanClass = cell.index === 11 ? 'quan-green' : 'quan-red';
+  const quanStone = cell.quan
+      ? `<span class="stone quan-stone ${quanClass}" style="--x:50%;--y:52%;--r:${cell.index === 11 ? -8 : 7}deg;--s:1;--z:60"></span>`
+      : '';
+
   return `
     <div class="cell-label">${isQuan ? 'Quan' : cell.index}</div>
     <div class="stone-layer" aria-hidden="true">
-      ${cell.quan ? '<span class="stone quan-stone"></span>' : ''}
+      ${quanStone}
       ${renderStones(cell.dan, cell.index)}
     </div>
     <div class="count-badge">${cell.dan}${cell.quan ? '+Q' : ''}</div>
@@ -304,24 +329,55 @@ function updateCellEl(index, boardData) {
 }
 
 function renderStones(count, idx) {
-  const visible = Math.min(count, 32);
+  const mobile = window.matchMedia && window.matchMedia('(max-width: 560px)').matches;
+  const maxVisible = mobile ? 24 : 30;
+  const visible = Math.min(count, maxVisible);
   let html = '';
+
   for (let i = 0; i < visible; i++) {
     const p = stonePos(i, idx, visible);
-    html += `<span class="stone" style="--x:${p.x}%;--y:${p.y}%;--r:${p.r}deg;--s:${p.s}"></span>`;
+    const tone = pebbleTone(i, idx);
+    html += `<span class="stone pebble-tone-${tone}" style="--x:${p.x}%;--y:${p.y}%;--r:${p.r}deg;--s:${p.s};--oval:${p.oval};--z:${p.z};--delay:${p.delay}ms"></span>`;
   }
-  if (count > 32) html += `<span class="more-stones">+${count - 32}</span>`;
+
+  if (count > maxVisible) html += `<span class="more-stones">+${count - maxVisible}</span>`;
   return html;
 }
 
+function pebbleNoise(seed) {
+  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+function pebbleTone(i, idx) {
+  return 1 + Math.floor(pebbleNoise((idx + 1) * 71 + (i + 1) * 131) * 8);
+}
+
 function stonePos(i, idx, visible) {
-  const col = i % 6, row = Math.floor(i / 6);
+  if (!visible) return { x: 50, y: 50, r: 0, s: 1, oval: 1, z: 1, delay: 0 };
+
+  const seed = (idx + 1) * 97 + (i + 1) * 43;
+  const angle = (i * 137.50776 + idx * 19 + pebbleNoise(seed) * 38) * Math.PI / 180;
+  const radius = Math.sqrt((i + .55) / Math.max(visible, 1));
+  const jitterX = (pebbleNoise(seed + 11) - .5) * 10;
+  const jitterY = (pebbleNoise(seed + 23) - .5) * 8;
+
+  const x = clamp(50 + Math.cos(angle) * radius * 34 + jitterX, 15, 85);
+  const y = clamp(52 + Math.sin(angle) * radius * 25 + jitterY, 20, 82);
+
   return {
-    x: 14 + col * 13 + ((i * 17 + idx * 13) % 11) - 5,
-    y: 22 + row * 16 + ((i * 23 + idx * 7) % 13) - 6,
-    r: ((i * 37 + idx * 9) % 80) - 40,
-    s: 0.86 + ((i + idx) % 5) * 0.04
+    x: Number(x.toFixed(2)),
+    y: Number(y.toFixed(2)),
+    r: Math.round((pebbleNoise(seed + 37) * 110) - 55),
+    s: Number((0.82 + pebbleNoise(seed + 41) * 0.38).toFixed(2)),
+    oval: Number((0.84 + pebbleNoise(seed + 53) * 0.36).toFixed(2)),
+    z: Math.round(y),
+    delay: Math.round(i * 12 + pebbleNoise(seed + 61) * 40)
   };
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function canSelect(cell) {
@@ -472,21 +528,49 @@ async function loadHistory() {
 /* ── WebSocket ── */
 function connectSocket() {
   if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') return;
-  const socket = new SockJS('/ws-game');
+  if (stompClient && stompClient.connected) return;
+
+  const socket = new SockJS(WS_ENDPOINT);
   stompClient  = Stomp.over(socket);
   stompClient.debug = null;
+
   stompClient.connect({}, () => {
+    if (reconnectSocketTimer) { clearTimeout(reconnectSocketTimer); reconnectSocketTimer = null; }
+
     stompClient.subscribe(`/topic/game/${gameId}`, msg => {
-      applyState(JSON.parse(msg.body), true); loadHistory();
+      try { applyState(JSON.parse(msg.body), true); loadHistory(); }
+      catch (e) { loadGame(false); }
     });
+
     stompClient.subscribe(`/topic/game/${gameId}/errors`, msg => {
       if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
-      showToast(JSON.parse(msg.body).message || 'Nước đi không hợp lệ');
+      try { showToast(JSON.parse(msg.body).message || 'Nước đi không hợp lệ'); }
+      catch (e) { showToast('Nước đi không hợp lệ'); }
       setCtrlDisabled(false); loadGame(false);
     });
-    if (state && state.roomCode)
-      stompClient.subscribe(`/topic/room/${state.roomCode}`, () => loadGame(false));
-  }, err => console.warn('WS lỗi, dùng REST.', err));
+
+    ensureRoomSubscription();
+  }, () => {
+    console.warn('WebSocket lỗi, tạm dùng REST và tự kết nối lại.');
+    if (!reconnectSocketTimer) reconnectSocketTimer = setTimeout(() => {
+      reconnectSocketTimer = null;
+      connectSocket();
+    }, 3000);
+  });
+}
+
+function ensureRoomSubscription() {
+  if (!stompClient || !stompClient.connected || !state || !state.roomCode) return;
+  if (roomSubscriptionCode === state.roomCode) return;
+
+  if (roomSubscription) {
+    try { roomSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+  }
+
+  roomSubscriptionCode = state.roomCode;
+  roomSubscription = stompClient.subscribe(`/topic/room/${state.roomCode}`, () => {
+    loadGame(false);
+  });
 }
 
 /* ── Animation ── */
@@ -550,24 +634,41 @@ function flyStone(fromIdx, toIdx) {
   const from = document.querySelector(`.cell[data-index="${fromIdx}"]`);
   const to   = document.querySelector(`.cell[data-index="${toIdx}"]`);
   if (!from || !to) return Promise.resolve();
+
   const fR = from.getBoundingClientRect(), tR = to.getBoundingClientRect();
+  const seed = Math.round(performance.now()) + fromIdx * 97 + toIdx * 131;
+  const tone = pebbleTone(seed % 17, toIdx);
+  const endX = tR.left + tR.width  * (0.35 + pebbleNoise(seed + 7)  * 0.30);
+  const endY = tR.top  + tR.height * (0.38 + pebbleNoise(seed + 13) * 0.30);
+
   const stone = document.createElement('span');
-  stone.className = 'flying-stone';
+  stone.className = `flying-stone pebble-tone-${tone}`;
+  stone.style.setProperty('--r', `${Math.round(pebbleNoise(seed + 19) * 100 - 50)}deg`);
+  stone.style.setProperty('--s', `${(0.95 + pebbleNoise(seed + 23) * 0.16).toFixed(2)}`);
   document.body.appendChild(stone);
+
   const sx = fR.left + fR.width / 2, sy = fR.top + fR.height / 2;
-  const dx = tR.left + tR.width / 2 - sx, dy = tR.top + tR.height / 2 - sy;
-  stone.style.left = `${sx}px`; stone.style.top = `${sy}px`;
+  const dx = endX - sx, dy = endY - sy;
+  const lift = Math.max(22, Math.min(46, Math.hypot(dx, dy) * .22));
+
+  stone.style.left = `${sx}px`;
+  stone.style.top = `${sy}px`;
+
   if (stone.animate) {
     const anim = stone.animate([
-      { transform: 'translate3d(-50%,-50%,0) scale(.92)', opacity: 1 },
-      { transform: `translate3d(calc(${dx*.52}px - 50%), calc(${dy*.52}px - 50% - 26px), 0) scale(1.08)`, opacity: 1, offset: .55 },
-      { transform: `translate3d(calc(${dx}px - 50%), calc(${dy}px - 50%), 0) scale(.96)`, opacity: 1 }
-    ], { duration: T_SOW, easing: 'cubic-bezier(.2,.82,.2,1)', fill: 'forwards' });
+      { transform: 'translate3d(-50%,-50%,0) rotate(var(--r)) scale(.92)', opacity: 1 },
+      { transform: `translate3d(calc(${dx*.52}px - 50%), calc(${dy*.52}px - 50% - ${lift}px), 0) rotate(calc(var(--r) + 92deg)) scale(1.12)`, opacity: 1, offset: .55 },
+      { transform: `translate3d(calc(${dx}px - 50%), calc(${dy}px - 50%), 0) rotate(calc(var(--r) + 178deg)) scale(.96)`, opacity: 1 }
+    ], { duration: T_SOW, easing: 'cubic-bezier(.18,.84,.24,1)', fill: 'forwards' });
     return anim.finished.catch(()=>{}).then(() => stone.remove());
   }
+
   stone.style.setProperty('--fly-duration', `${T_SOW}ms`);
   return new Promise(resolve => {
-    requestAnimationFrame(() => { stone.style.transform = `translate(${dx}px,${dy}px) scale(.9)`; stone.style.opacity = '.3'; });
+    requestAnimationFrame(() => {
+      stone.style.transform = `translate3d(${dx}px, ${dy}px, 0) rotate(160deg) scale(.9)`;
+      stone.style.opacity = '.3';
+    });
     setTimeout(() => { stone.remove(); resolve(); }, T_SOW);
   });
 }
@@ -582,15 +683,19 @@ function pulseCapture(index) {
 
 function spawnParticles(cell) {
   const rect = cell.getBoundingClientRect();
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 9; i++) {
     const p = document.createElement('span');
     p.className = 'capture-particle';
+    const seed = rect.left + rect.top + i * 47;
+    const angle = i * Math.PI * 2 / 9 + pebbleNoise(seed) * .35;
+    const distance = 28 + pebbleNoise(seed + 9) * 26;
     p.style.left = `${rect.left + rect.width / 2}px`;
     p.style.top  = `${rect.top + rect.height / 2}px`;
-    p.style.setProperty('--px', `${Math.cos(i * Math.PI * 2 / 7) * 40}px`);
-    p.style.setProperty('--py', `${Math.sin(i * Math.PI * 2 / 7) * 32}px`);
+    p.style.setProperty('--px', `${Math.cos(angle) * distance}px`);
+    p.style.setProperty('--py', `${Math.sin(angle) * distance * .78}px`);
+    p.style.setProperty('--r', `${Math.round(pebbleNoise(seed + 14) * 220 - 110)}deg`);
     document.body.appendChild(p);
-    setTimeout(() => p.remove(), 700);
+    setTimeout(() => p.remove(), 720);
   }
 }
 

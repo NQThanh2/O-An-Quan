@@ -2,149 +2,436 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Sảnh phòng - Ô Ăn Quan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-<main class="home-page narrow">
-    <section class="hero small">
-        <div class="badge">Lobby Online 2 người</div>
-        <h1>Sảnh <span>phòng</span></h1>
-        <p>Tạo phòng bằng mã hoặc bấm tìm người chơi. Khi deploy lên domain/server chung, người chơi khác vào cùng website sẽ được ghép trận qua WebSocket.</p>
-        <div class="actions">
-            <input id="username" class="input" placeholder="Tên người chơi" value="player">
-            <button class="btn primary" onclick="findOnlineMatch()">Tìm người chơi online</button>
-            <button class="btn primary" onclick="createRoom()">Tạo phòng bằng mã</button>
-            <a class="btn ghost" href="/">Trang chủ</a>
+<body class="home-body nam-ui lobby-page-body">
+<div class="bg-aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+
+<main class="home-page premium-lobby lobby-v2">
+    <section class="hero hero-premium lobby-hero matchmaking-hero">
+        <div class="hero-copy">
+            <div class="badge premium-badge">Online realtime 2 người</div>
+            <h1>Tìm trận <span>mượt hơn</span></h1>
+            <p class="hero-lead">
+                Bấm tìm trận để hệ thống tự ghép với phòng đang chờ. Nếu chưa có ai, bạn sẽ ở hàng chờ và tự chuyển vào game khi có đối thủ.
+            </p>
+
+            <div class="match-form-card">
+                <label for="username">Tên hiển thị</label>
+                <div class="match-input-row">
+                    <input id="username" class="input premium-input" autocomplete="nickname" placeholder="Nhập tên của bạn">
+                    <button id="randomNameBtn" class="btn ghost mini-btn" type="button" onclick="randomizeName()">Đổi tên</button>
+                </div>
+                <small>Không nên để 2 máy cùng một tên, vì server sẽ tưởng là cùng một người chơi.</small>
+            </div>
+
+            <div class="actions lobby-actions premium-actions">
+                <button id="matchBtn" class="btn primary btn-xl" onclick="findOnlineMatch()">🔎 Tìm trận nhanh</button>
+                <button id="createBtn" class="btn primary btn-xl soft-primary" onclick="createRoom()">➕ Tạo phòng riêng</button>
+                <a class="btn ghost btn-xl" href="/">🏠 Trang chủ</a>
+            </div>
+        </div>
+
+        <div class="lobby-status-panel live-panel" aria-live="polite">
+            <div class="connection-chip" id="socketStatus"><i></i><span>Đang kết nối realtime...</span></div>
+            <div class="radar"><i></i><i></i><i></i></div>
+            <strong id="matchTitle">Sẵn sàng tìm trận</strong>
+            <span id="matchSub">Danh sách phòng và trạng thái ghép trận sẽ tự cập nhật.</span>
+            <div class="match-progress" aria-hidden="true"><b></b></div>
         </div>
     </section>
 
-    <section class="card">
-        <h2>Tìm người chơi trên mạng</h2>
-        <p>Bấm nút này để hệ thống tự ghép bạn với phòng đang chờ. Nếu chưa có ai chờ, bạn sẽ được tạo phòng mới và ngồi đợi người tiếp theo.</p>
-        <p class="ai-note">Lưu ý: chức năng này tìm người đang vào cùng server/domain với bạn. Khi chạy localhost thì chỉ test được giữa các trình duyệt/máy cùng truy cập server local của bạn.</p>
-        <button class="btn small" onclick="findOnlineMatch()">Bắt đầu tìm trận</button>
-    </section>
-
-    <section class="card">
-        <h2>Vào phòng bằng mã</h2>
-        <p>Người A tạo phòng sẽ thấy mã phòng. Người B nhập mã đó ở đây để vào chơi.</p>
-        <div class="join-code-row">
-            <input id="joinCode" class="input" placeholder="Nhập mã phòng, ví dụ AB12CD">
-            <button class="btn small" onclick="joinByCode()">Vào phòng</button>
+    <section id="waitingPanel" class="card waiting-match-card hidden" aria-live="polite">
+        <div class="waiting-main">
+            <div class="waiting-spinner"><i></i><i></i><i></i></div>
+            <div>
+                <p class="eyebrow">Đang chờ đối thủ</p>
+                <h2 id="waitingTitle">Bạn đang trong hàng chờ</h2>
+                <p id="waitingText">Khi có người khác bấm tìm trận hoặc nhập mã phòng, hệ thống sẽ tự chuyển bạn vào bàn chơi.</p>
+            </div>
+        </div>
+        <div class="waiting-code-box">
+            <span>Mã phòng</span>
+            <b id="waitingCode">------</b>
+            <button class="btn small" onclick="copyWaitingCode()">Copy mã</button>
+            <button id="goWaitingGameBtn" class="btn small ghost" onclick="goWaitingGame()">Vào bàn chờ</button>
         </div>
     </section>
 
-    <section class="card">
-        <h2>Phòng đang chờ</h2>
-        <div id="rooms">Đang tải...</div>
+    <section class="lobby-grid">
+        <article class="card premium-join ux-card">
+            <div class="feature-icon">⚡</div>
+            <h2>Ghép trận realtime</h2>
+            <p>WebSocket sẽ báo ngay khi có phòng mới, có người vào phòng hoặc trận đã bắt đầu. Nếu WebSocket chập chờn, trang vẫn tự tải lại bằng polling dự phòng.</p>
+            <button class="btn small" onclick="findOnlineMatch()">Tìm người chơi ngay</button>
+        </article>
+
+        <article class="card premium-join ux-card">
+            <div class="feature-icon">🔐</div>
+            <h2>Vào phòng bằng mã</h2>
+            <p>Nhập mã của bạn bè để vào làm Người B. Tên sẽ lấy từ ô “Tên hiển thị” phía trên.</p>
+            <div class="join-code-row better-join-row">
+                <input id="joinCode" class="input" placeholder="Nhập mã phòng, ví dụ AB12CD" maxlength="10" oninput="this.value=this.value.toUpperCase()">
+                <button class="btn small" onclick="joinByCode()">Vào phòng</button>
+            </div>
+        </article>
+    </section>
+
+    <section class="card rooms-card rooms-card-v2">
+        <div class="section-title-row">
+            <div>
+                <h2>Phòng đang chờ</h2>
+                <p id="roomListSub">Tự cập nhật realtime. Bạn cũng có thể bấm tải lại nếu mạng yếu.</p>
+            </div>
+            <button id="reloadRoomsBtn" class="btn small" onclick="loadRooms(true)">↻ Tải lại</button>
+        </div>
+        <div id="rooms" class="rooms-list">Đang tải...</div>
     </section>
 </main>
+
+<div id="lobbyToastStack" class="toast-stack"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script>
-    async function loadRooms() {
-        const res = await fetch('/api/rooms');
-        const rooms = await res.json();
-        const box = document.getElementById('rooms');
-        if (!rooms.length) {
-            box.innerHTML = '<p>Chưa có phòng nào. Bấm “Tìm người chơi online” hoặc “Tạo phòng bằng mã”.</p>';
-            return;
-        }
-        box.innerHTML = rooms.map(r => `
-            <div class="room-row">
-                <div>
-                    <b class="room-code">${r.roomCode}</b><br>
-                    <span>Chủ phòng: ${r.hostUsername || 'N/A'} · Trạng thái: ${r.status}</span>
-                </div>
-                <button class="btn small" onclick="copyCode('${r.roomCode}')">Copy mã</button>
-                <button class="btn small" onclick="joinRoom('${r.roomCode}')">Vào làm Người B</button>
-            </div>
-        `).join('');
+    const WS_ENDPOINT = '/ws';
+    let lobbyClient = null;
+    let lobbyReconnectTimer = null;
+    let waitingRoom = null;
+    let waitingPollTimer = null;
+    let roomsPollTimer = null;
+    let currentRoomSubscription = null;
+    let currentRoomSubscriptionCode = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        prepareUsername();
+        bindEnterKeys();
+        loadRooms(false);
+        connectLobbySocket();
+        roomsPollTimer = setInterval(() => loadRooms(false), 7000);
+    });
+
+    function prepareUsername() {
+        const input = document.getElementById('username');
+        const saved = sessionStorage.getItem('lobbyUsername');
+        input.value = saved || makeRandomName();
+        input.addEventListener('input', () => sessionStorage.setItem('lobbyUsername', input.value.trim()));
     }
 
-    function getUsername(defaultName = 'player') {
-        return document.getElementById('username').value.trim() || defaultName;
+    function bindEnterKeys() {
+        document.getElementById('username').addEventListener('keydown', e => {
+            if (e.key === 'Enter') findOnlineMatch();
+        });
+        document.getElementById('joinCode').addEventListener('keydown', e => {
+            if (e.key === 'Enter') joinByCode();
+        });
+    }
+
+    function makeRandomName() {
+        return 'Player-' + Math.floor(1000 + Math.random() * 9000);
+    }
+
+    function randomizeName() {
+        const input = document.getElementById('username');
+        input.value = makeRandomName();
+        sessionStorage.setItem('lobbyUsername', input.value);
+        toast('Đã đổi tên: ' + input.value);
+    }
+
+    function getUsername(defaultName = 'Player') {
+        const input = document.getElementById('username');
+        let name = (input.value || '').trim();
+        if (!name) {
+            name = defaultName + '-' + Math.floor(1000 + Math.random() * 9000);
+            input.value = name;
+        }
+        sessionStorage.setItem('lobbyUsername', name);
+        return name;
+    }
+
+    async function apiFetch(url, options = {}) {
+        const res = await fetch(url, options);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || 'Có lỗi xảy ra, thử lại sau.');
+        return data;
+    }
+
+    async function loadRooms(manual = false) {
+        const box = document.getElementById('rooms');
+        const btn = document.getElementById('reloadRoomsBtn');
+        if (manual) btn.disabled = true;
+        try {
+            const rooms = await apiFetch('/api/rooms');
+            renderRooms(rooms);
+            if (manual) toast('Đã cập nhật danh sách phòng.');
+        } catch (e) {
+            box.innerHTML = `<div class="empty-room error-room"><b>Không tải được phòng</b><span>${escapeHtml(e.message)}</span></div>`;
+        } finally {
+            if (manual) setTimeout(() => btn.disabled = false, 350);
+        }
+    }
+
+    function renderRooms(rooms) {
+        const box = document.getElementById('rooms');
+        if (!rooms.length) {
+            box.innerHTML = '<div class="empty-room"><b>Chưa có phòng nào</b><span>Bấm “Tìm trận nhanh” để tạo hàng chờ đầu tiên.</span></div>';
+            return;
+        }
+
+        const username = getUsername('Player').toLowerCase();
+        box.innerHTML = rooms.map(r => {
+            const isMine = (r.hostUsername || '').toLowerCase() === username;
+            const joinDisabled = isMine ? 'disabled' : '';
+            const statusText = r.status === 'WAITING' ? 'Đang chờ' : r.status;
+            return `
+                <div class="room-row premium-room-row room-live-row ${isMine ? 'my-room' : ''}">
+                    <div class="room-main-info">
+                        <b class="room-code">${escapeHtml(r.roomCode)}</b>
+                        <span>Chủ phòng: ${escapeHtml(r.hostUsername || 'N/A')} · ${statusText}</span>
+                    </div>
+                    <button class="btn small ghost" onclick="copyCode('${escapeAttr(r.roomCode)}')">Copy mã</button>
+                    <button class="btn small" ${joinDisabled} onclick="joinRoom('${escapeAttr(r.roomCode)}')">
+                        ${isMine ? 'Phòng của bạn' : 'Vào chơi'}
+                    </button>
+                </div>`;
+        }).join('');
     }
 
     async function createRoom() {
-        const username = getUsername('host');
-        const res = await fetch('/api/rooms', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username})
-        });
-        const data = await res.json();
-        if (!res.ok || !data.gameId) {
-            alert(data.message || 'Không tạo được phòng');
-            return;
+        const username = getUsername('Host');
+        setBusy(true, 'Đang tạo phòng...');
+        try {
+            const data = await apiFetch('/api/rooms', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username})
+            });
+            localStorage.setItem(`gameSide_${data.gameId}`, 'A');
+            localStorage.setItem(`playerName_${data.gameId}`, username);
+            showWaitingRoom(data, 'Tạo phòng thành công');
+            toast('Đã tạo phòng. Gửi mã ' + data.roomCode + ' cho bạn bè.');
+            loadRooms(false);
+        } catch (e) {
+            toast(e.message);
+        } finally {
+            setBusy(false);
         }
-        localStorage.setItem(`gameSide_${data.gameId}`, 'A');
-        localStorage.setItem(`playerName_${data.gameId}`, username);
-        alert('Tạo phòng thành công. Mã phòng: ' + data.roomCode + '\nGửi mã này cho người chơi B.');
-        window.location.href = `/game/${data.gameId}?side=A&room=${data.roomCode}&name=${encodeURIComponent(username)}`;
     }
 
     async function findOnlineMatch() {
-        const username = getUsername('player');
-        const res = await fetch(`/api/rooms/matchmaking/find?username=${encodeURIComponent(username)}`, {method: 'POST'});
-        const data = await res.json();
-        if (!res.ok || !data.gameId) {
-            alert(data.message || 'Không tìm được trận');
-            return;
-        }
+        const username = getUsername('Player');
+        setBusy(true, 'Đang tìm đối thủ...');
+        setMatchStatus('Đang tìm đối thủ', 'Hệ thống đang kiểm tra phòng đang chờ.', 'searching');
+        try {
+            const data = await apiFetch(`/api/rooms/matchmaking/find?username=${encodeURIComponent(username)}`, {method: 'POST'});
+            const side = resolveSide(data, username);
+            localStorage.setItem(`gameSide_${data.gameId}`, side);
+            localStorage.setItem(`playerName_${data.gameId}`, username);
 
-        const isHost = (data.hostUsername || '').toLowerCase() === username.toLowerCase();
-        const side = isHost && data.status === 'WAITING' ? 'A' : 'B';
-        localStorage.setItem(`gameSide_${data.gameId}`, side);
-        localStorage.setItem(`playerName_${data.gameId}`, username);
+            if (data.status === 'PLAYING') {
+                toast('Đã tìm thấy đối thủ. Đang vào bàn chơi...');
+                redirectToGame(data, side);
+                return;
+            }
 
-        if (data.status === 'WAITING') {
-            alert('Chưa có ai chờ. Bạn đã được đưa vào hàng chờ. Mã phòng: ' + data.roomCode);
+            showWaitingRoom(data, 'Đang chờ ghép trận');
+            toast('Chưa có đối thủ. Bạn đang ở hàng chờ realtime.');
+            loadRooms(false);
+        } catch (e) {
+            setMatchStatus('Tìm trận thất bại', e.message, 'error');
+            toast(e.message);
+        } finally {
+            setBusy(false);
         }
-        window.location.href = `/game/${data.gameId}?side=${side}&room=${data.roomCode}&name=${encodeURIComponent(username)}`;
+    }
+
+    function showWaitingRoom(room, title) {
+        waitingRoom = room;
+        document.getElementById('waitingPanel').classList.remove('hidden');
+        document.getElementById('waitingTitle').textContent = title || 'Bạn đang trong hàng chờ';
+        document.getElementById('waitingText').textContent = 'Bạn có thể giữ màn hình này. Khi có đối thủ, trang sẽ tự chuyển vào game.';
+        document.getElementById('waitingCode').textContent = room.roomCode || '------';
+        setMatchStatus('Đang chờ đối thủ', `Mã phòng ${room.roomCode}. Realtime đang theo dõi phòng này.`, 'waiting');
+        subscribeWaitingRoom(room.roomCode);
+        startWaitingPoll();
+    }
+
+    function startWaitingPoll() {
+        if (waitingPollTimer) clearInterval(waitingPollTimer);
+        waitingPollTimer = setInterval(async () => {
+            if (!waitingRoom || !waitingRoom.roomCode) return;
+            try {
+                const room = await apiFetch('/api/rooms/' + encodeURIComponent(waitingRoom.roomCode));
+                handleRoomUpdate(room);
+            } catch (e) {
+                // Giữ im lặng để không spam người dùng khi mạng chập chờn
+            }
+        }, 3500);
+    }
+
+    function subscribeWaitingRoom(code) {
+        if (!lobbyClient || !lobbyClient.connected || !code) return;
+        if (currentRoomSubscriptionCode === code) return;
+        if (currentRoomSubscription) {
+            try { currentRoomSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+        }
+        currentRoomSubscriptionCode = code;
+        currentRoomSubscription = lobbyClient.subscribe('/topic/room/' + code, msg => {
+            try { handleRoomUpdate(JSON.parse(msg.body)); }
+            catch (e) { loadRooms(false); }
+        });
+    }
+
+    function handleRoomUpdate(room) {
+        if (!room) return;
+        loadRooms(false);
+        if (!waitingRoom || waitingRoom.roomCode !== room.roomCode) return;
+
+        if (room.status === 'PLAYING' && room.gameId) {
+            const side = resolveSide(room, getUsername('Player'));
+            localStorage.setItem(`gameSide_${room.gameId}`, side);
+            localStorage.setItem(`playerName_${room.gameId}`, getUsername('Player'));
+            toast('Đã có đối thủ. Đang vào game...');
+            redirectToGame(room, side);
+        }
     }
 
     async function joinByCode() {
         const code = document.getElementById('joinCode').value.trim().toUpperCase();
         if (!code) {
-            alert('Bạn chưa nhập mã phòng.');
+            toast('Bạn chưa nhập mã phòng.');
+            document.getElementById('joinCode').focus();
             return;
         }
-        joinRoom(code);
+        await joinRoom(code);
     }
 
     async function joinRoom(code) {
-        const username = prompt('Tên người chơi B:', getUsername('guest')) || 'guest';
-        const res = await fetch(`/api/rooms/${code}/join?username=${encodeURIComponent(username)}`, {method: 'POST'});
-        const data = await res.json();
-        if (!res.ok || !data.gameId) {
-            alert(data.message || 'Không vào được phòng');
-            return;
+        const username = getUsername('Guest');
+        setBusy(true, 'Đang vào phòng...');
+        try {
+            const data = await apiFetch(`/api/rooms/${encodeURIComponent(code)}/join?username=${encodeURIComponent(username)}`, {method: 'POST'});
+            localStorage.setItem(`gameSide_${data.gameId}`, 'B');
+            localStorage.setItem(`playerName_${data.gameId}`, username);
+            toast('Vào phòng thành công. Đang mở bàn chơi...');
+            redirectToGame(data, 'B');
+        } catch (e) {
+            toast(e.message);
+        } finally {
+            setBusy(false);
         }
-        localStorage.setItem(`gameSide_${data.gameId}`, 'B');
-        localStorage.setItem(`playerName_${data.gameId}`, username);
-        window.location.href = `/game/${data.gameId}?side=B&room=${data.roomCode}&name=${encodeURIComponent(username)}`;
+    }
+
+    function goWaitingGame() {
+        if (!waitingRoom || !waitingRoom.gameId) return;
+        redirectToGame(waitingRoom, 'A');
+    }
+
+    async function copyWaitingCode() {
+        if (!waitingRoom || !waitingRoom.roomCode) return;
+        await copyCode(waitingRoom.roomCode);
     }
 
     async function copyCode(code) {
-        await navigator.clipboard.writeText(code);
-        alert('Đã copy mã phòng: ' + code);
+        try {
+            await navigator.clipboard.writeText(code);
+        } catch (e) {
+            const tmp = document.createElement('input');
+            tmp.value = code;
+            document.body.appendChild(tmp);
+            tmp.select();
+            document.execCommand('copy');
+            tmp.remove();
+        }
+        toast('Đã copy mã phòng: ' + code);
     }
 
     function connectLobbySocket() {
-        if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') return;
-        const socket = new SockJS('/ws-game');
-        const client = Stomp.over(socket);
-        client.debug = null;
-        client.connect({}, () => {
-            client.subscribe('/topic/rooms', () => loadRooms());
+        if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+            setSocketStatus(false, 'Không tải được thư viện realtime');
+            return;
+        }
+        if (lobbyClient && lobbyClient.connected) return;
+
+        const socket = new SockJS(WS_ENDPOINT);
+        lobbyClient = Stomp.over(socket);
+        lobbyClient.debug = null;
+
+        lobbyClient.connect({}, () => {
+            if (lobbyReconnectTimer) {
+                clearTimeout(lobbyReconnectTimer);
+                lobbyReconnectTimer = null;
+            }
+            setSocketStatus(true, 'Realtime đang hoạt động');
+            lobbyClient.subscribe('/topic/rooms', () => loadRooms(false));
+            if (waitingRoom && waitingRoom.roomCode) subscribeWaitingRoom(waitingRoom.roomCode);
+        }, () => {
+            setSocketStatus(false, 'Realtime mất kết nối, đang thử lại...');
+            if (!lobbyReconnectTimer) lobbyReconnectTimer = setTimeout(() => {
+                lobbyReconnectTimer = null;
+                connectLobbySocket();
+            }, 3000);
         });
     }
 
-    loadRooms();
-    connectLobbySocket();
+    function redirectToGame(room, side) {
+        if (waitingPollTimer) clearInterval(waitingPollTimer);
+        const username = getUsername(side === 'A' ? 'Host' : 'Guest');
+        window.location.href = `/game/${room.gameId}?side=${side}&room=${room.roomCode}&name=${encodeURIComponent(username)}`;
+    }
+
+    function resolveSide(room, username) {
+        const name = (username || '').toLowerCase();
+        if ((room.hostUsername || '').toLowerCase() === name) return 'A';
+        if ((room.guestUsername || '').toLowerCase() === name) return 'B';
+        return room.status === 'WAITING' ? 'A' : 'B';
+    }
+
+    function setBusy(isBusy, label) {
+        document.getElementById('matchBtn').disabled = isBusy;
+        document.getElementById('createBtn').disabled = isBusy;
+        if (label) setMatchStatus(label, 'Bạn chờ một chút, hệ thống đang xử lý.', 'searching');
+    }
+
+    function setMatchStatus(title, sub, type) {
+        document.getElementById('matchTitle').textContent = title;
+        document.getElementById('matchSub').textContent = sub;
+        document.querySelector('.live-panel').dataset.state = type || 'idle';
+    }
+
+    function setSocketStatus(connected, text) {
+        const chip = document.getElementById('socketStatus');
+        chip.classList.toggle('connected', connected);
+        chip.classList.toggle('disconnected', !connected);
+        chip.querySelector('span').textContent = text;
+    }
+
+    function toast(text) {
+        const stack = document.getElementById('lobbyToastStack');
+        if (!stack || !text) return;
+        const node = document.createElement('div');
+        node.className = 'toast';
+        node.textContent = text;
+        stack.appendChild(node);
+        setTimeout(() => node.classList.add('show'), 20);
+        setTimeout(() => {
+            node.classList.remove('show');
+            setTimeout(() => node.remove(), 250);
+        }, 3600);
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+    }
+
+    function escapeAttr(value) {
+        return String(value ?? '').replace(/[\\'"<>]/g, '');
+    }
 </script>
 </body>
 </html>
