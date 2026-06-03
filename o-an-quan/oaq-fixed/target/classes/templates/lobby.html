@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sảnh phòng - Ô Ăn Quan</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<main class="home-page narrow">
+    <section class="hero small">
+        <div class="badge">Lobby Online 2 người</div>
+        <h1>Sảnh <span>phòng</span></h1>
+        <p>Tạo phòng bằng mã hoặc bấm tìm người chơi. Khi deploy lên domain/server chung, người chơi khác vào cùng website sẽ được ghép trận qua WebSocket.</p>
+        <div class="actions">
+            <input id="username" class="input" placeholder="Tên người chơi" value="player">
+            <button class="btn primary" onclick="findOnlineMatch()">Tìm người chơi online</button>
+            <button class="btn primary" onclick="createRoom()">Tạo phòng bằng mã</button>
+            <a class="btn ghost" href="/">Trang chủ</a>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Tìm người chơi trên mạng</h2>
+        <p>Bấm nút này để hệ thống tự ghép bạn với phòng đang chờ. Nếu chưa có ai chờ, bạn sẽ được tạo phòng mới và ngồi đợi người tiếp theo.</p>
+        <p class="ai-note">Lưu ý: chức năng này tìm người đang vào cùng server/domain với bạn. Khi chạy localhost thì chỉ test được giữa các trình duyệt/máy cùng truy cập server local của bạn.</p>
+        <button class="btn small" onclick="findOnlineMatch()">Bắt đầu tìm trận</button>
+    </section>
+
+    <section class="card">
+        <h2>Vào phòng bằng mã</h2>
+        <p>Người A tạo phòng sẽ thấy mã phòng. Người B nhập mã đó ở đây để vào chơi.</p>
+        <div class="join-code-row">
+            <input id="joinCode" class="input" placeholder="Nhập mã phòng, ví dụ AB12CD">
+            <button class="btn small" onclick="joinByCode()">Vào phòng</button>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Phòng đang chờ</h2>
+        <div id="rooms">Đang tải...</div>
+    </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script>
+    async function loadRooms() {
+        const res = await fetch('/api/rooms');
+        const rooms = await res.json();
+        const box = document.getElementById('rooms');
+        if (!rooms.length) {
+            box.innerHTML = '<p>Chưa có phòng nào. Bấm “Tìm người chơi online” hoặc “Tạo phòng bằng mã”.</p>';
+            return;
+        }
+        box.innerHTML = rooms.map(r => `
+            <div class="room-row">
+                <div>
+                    <b class="room-code">${r.roomCode}</b><br>
+                    <span>Chủ phòng: ${r.hostUsername || 'N/A'} · Trạng thái: ${r.status}</span>
+                </div>
+                <button class="btn small" onclick="copyCode('${r.roomCode}')">Copy mã</button>
+                <button class="btn small" onclick="joinRoom('${r.roomCode}')">Vào làm Người B</button>
+            </div>
+        `).join('');
+    }
+
+    function getUsername(defaultName = 'player') {
+        return document.getElementById('username').value.trim() || defaultName;
+    }
+
+    async function createRoom() {
+        const username = getUsername('host');
+        const res = await fetch('/api/rooms', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username})
+        });
+        const data = await res.json();
+        if (!res.ok || !data.gameId) {
+            alert(data.message || 'Không tạo được phòng');
+            return;
+        }
+        localStorage.setItem(`gameSide_${data.gameId}`, 'A');
+        localStorage.setItem(`playerName_${data.gameId}`, username);
+        alert('Tạo phòng thành công. Mã phòng: ' + data.roomCode + '\nGửi mã này cho người chơi B.');
+        window.location.href = `/game/${data.gameId}?side=A&room=${data.roomCode}&name=${encodeURIComponent(username)}`;
+    }
+
+    async function findOnlineMatch() {
+        const username = getUsername('player');
+        const res = await fetch(`/api/rooms/matchmaking/find?username=${encodeURIComponent(username)}`, {method: 'POST'});
+        const data = await res.json();
+        if (!res.ok || !data.gameId) {
+            alert(data.message || 'Không tìm được trận');
+            return;
+        }
+
+        const isHost = (data.hostUsername || '').toLowerCase() === username.toLowerCase();
+        const side = isHost && data.status === 'WAITING' ? 'A' : 'B';
+        localStorage.setItem(`gameSide_${data.gameId}`, side);
+        localStorage.setItem(`playerName_${data.gameId}`, username);
+
+        if (data.status === 'WAITING') {
+            alert('Chưa có ai chờ. Bạn đã được đưa vào hàng chờ. Mã phòng: ' + data.roomCode);
+        }
+        window.location.href = `/game/${data.gameId}?side=${side}&room=${data.roomCode}&name=${encodeURIComponent(username)}`;
+    }
+
+    async function joinByCode() {
+        const code = document.getElementById('joinCode').value.trim().toUpperCase();
+        if (!code) {
+            alert('Bạn chưa nhập mã phòng.');
+            return;
+        }
+        joinRoom(code);
+    }
+
+    async function joinRoom(code) {
+        const username = prompt('Tên người chơi B:', getUsername('guest')) || 'guest';
+        const res = await fetch(`/api/rooms/${code}/join?username=${encodeURIComponent(username)}`, {method: 'POST'});
+        const data = await res.json();
+        if (!res.ok || !data.gameId) {
+            alert(data.message || 'Không vào được phòng');
+            return;
+        }
+        localStorage.setItem(`gameSide_${data.gameId}`, 'B');
+        localStorage.setItem(`playerName_${data.gameId}`, username);
+        window.location.href = `/game/${data.gameId}?side=B&room=${data.roomCode}&name=${encodeURIComponent(username)}`;
+    }
+
+    async function copyCode(code) {
+        await navigator.clipboard.writeText(code);
+        alert('Đã copy mã phòng: ' + code);
+    }
+
+    function connectLobbySocket() {
+        if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') return;
+        const socket = new SockJS('/ws-game');
+        const client = Stomp.over(socket);
+        client.debug = null;
+        client.connect({}, () => {
+            client.subscribe('/topic/rooms', () => loadRooms());
+        });
+    }
+
+    loadRooms();
+    connectLobbySocket();
+</script>
+</body>
+</html>

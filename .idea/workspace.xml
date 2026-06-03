@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="165c801e-1856-44be-80e4-fd3c4ea63eb3" name="Changes" comment="[add]: thêm DTO quản lý thông tin phòng chơi">
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;NQThanh2&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/pvhNam/CNPM.git&quot;,
+    &quot;accountId&quot;: &quot;a6b16c9c-0cbe-47f3-9998-9282154bbc75&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3EFZDMtROMf8sbW1yLX81lJwqfD" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/CNPM/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\CNPM\o-an-quan\oaq-fixed\src\main\java\com\example\oanquan\dto" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="OAnQuanApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="o-an-quan" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.oanquan.OAnQuanApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="165c801e-1856-44be-80e4-fd3c4ea63eb3" name="Changes" comment="" />
+      <created>1779776158802</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1779776158802</updated>
+      <workItem from="1779776159692" duration="2991000" />
+      <workItem from="1779860357938" duration="10000" />
+      <workItem from="1779877498802" duration="287000" />
+      <workItem from="1779973550654" duration="413000" />
+      <workItem from="1780287500880" duration="2456000" />
+      <workItem from="1780363995846" duration="420000" />
+      <workItem from="1780453984184" duration="121000" />
+      <workItem from="1780464833740" duration="1302000" />
+    </task>
+    <task id="LOCAL-00001" summary="[add]: thêm model của các quân cờ">
+      <option name="closed" value="true" />
+      <created>1779795228290</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1779795228291</updated>
+    </task>
+    <task id="LOCAL-00002" summary="[add]: thêm model để lưu kết quả nước đi và hoạt ảnh các nước đi">
+      <option name="closed" value="true" />
+      <created>1779877744460</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1779877744461</updated>
+    </task>
+    <task id="LOCAL-00003" summary="[add]: Thêm bộ xử lý luật chơi game ô ăn quan">
+      <option name="closed" value="true" />
+      <created>1779973890199</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1779973890199</updated>
+    </task>
+    <task id="LOCAL-00004" summary="[add]: thêm DTO cho chức năng xác thực người dùng">
+      <option name="closed" value="true" />
+      <created>1780288750886</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1780288750887</updated>
+    </task>
+    <task id="LOCAL-00005" summary="[add]: thêm DTO xử lý nước đi và lịch sử lượt chơi">
+      <option name="closed" value="true" />
+      <created>1780288874262</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1780288874262</updated>
+    </task>
+    <task id="LOCAL-00006" summary="[add]: thêm DTO quản lý thông tin phòng chơi">
+      <option name="closed" value="true" />
+      <created>1780288957784</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1780288957784</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="[add]: thêm model của các quân cờ" />
+    <MESSAGE value="[add]: thêm model để lưu kết quả nước đi và hoạt ảnh các nước đi" />
+    <MESSAGE value="[add]: Thêm bộ xử lý luật chơi game ô ăn quan" />
+    <MESSAGE value="[add]: thêm DTO cho chức năng xác thực người dùng" />
+    <MESSAGE value="[add]: thêm DTO xử lý nước đi và lịch sử lượt chơi" />
+    <MESSAGE value="[add]: thêm DTO quản lý thông tin phòng chơi" />
+    <option name="LAST_COMMIT_MESSAGE" value="[add]: thêm DTO quản lý thông tin phòng chơi" />
+  </component>
+</project>

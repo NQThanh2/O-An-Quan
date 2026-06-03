@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Ô Ăn Quan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="game-root">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <a href="/" class="logo">
+      <span class="logo-icon">🪨</span>
+      <span>Ô Ăn Quan</span>
+    </a>
+    <div class="status-pill" id="phaseLabel">Đang tải...</div>
+  </header>
+
+  <!-- TURN BANNER -->
+  <div class="turn-banner" id="turnBanner">
+    <span class="turn-banner-icon" id="turnBannerIcon">⏳</span>
+    <div class="turn-banner-text">
+      <b id="turnBannerTitle">Đang tải...</b>
+      <span id="turnBannerSub">Đồng bộ dữ liệu...</span>
+    </div>
+    <span class="turn-badge" id="turnBadge">...</span>
+  </div>
+
+  <!-- SCORES -->
+  <div class="scores-row">
+    <div class="score-card" id="scoreCardA">
+      <div class="score-name" id="nameA">Người A</div>
+      <div class="score-num" id="scoreA">0</div>
+      <div class="score-label">điểm</div>
+    </div>
+    <div class="vs-center">
+      <div class="turn-indicator">
+        <div class="turn-dot" id="turnDot"></div>
+        <span id="turnLabel">A</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="msg-pill" id="turnNotice">Đang tải...</div>
+    </div>
+    <div class="score-card" id="scoreCardB">
+      <div class="score-name" id="nameB">Người B</div>
+      <div class="score-num score-b" id="scoreB">0</div>
+      <div class="score-label">điểm</div>
+    </div>
+  </div>
+
+  <!-- ROOM INFO (online only) -->
+  <div class="room-strip" id="roomStrip">
+    <span>🏠 <b id="roomCodeLabel">Local</b></span>
+    <span id="sideLabel">Cả hai bên</span>
+  </div>
+
+  <!-- BOARD -->
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+
+  <!-- SELECTION HELPER -->
+  <div class="helper-bar" id="helperBar">
+    <span class="helper-icon">💡</span>
+    <span id="helperText">Chọn ô dân sáng màu ở hàng của bạn để bắt đầu.</span>
+  </div>
+
+  <!-- MOVE BUTTONS -->
+  <div class="move-buttons" id="moveButtons">
+    <button class="move-btn left-btn" id="leftBtn" onclick="makeMove('LEFT')" disabled>
+      <span class="btn-arrow">←</span>
+      <span class="btn-label">Rải trái</span>
+    </button>
+    <button class="reload-btn" onclick="loadGame(false)" title="Tải lại">↺</button>
+    <button class="move-btn right-btn" id="rightBtn" onclick="makeMove('RIGHT')" disabled>
+      <span class="btn-label">Rải phải</span>
+      <span class="btn-arrow">→</span>
+    </button>
+  </div>
+
+  <!-- MESSAGE -->
+  <p class="msg-box" id="messageBox">Chọn ô dân bên người đang đến lượt.</p>
+
+  <!-- HISTORY -->
+  <details class="history-section">
+    <summary>📜 Lịch sử nước đi</summary>
+    <div id="history" class="history-list"></div>
+  </details>
+
+</div>
+
+<!-- RESULT MODAL -->
+<div class="result-overlay hidden" id="resultModal" role="dialog" aria-modal="true">
+  <div class="result-card" id="resultCard">
+    <div class="result-icon" id="resultIcon">🏆</div>
+    <h2 id="resultTitle">Ván kết thúc</h2>
+    <p id="resultDetail">Đang tính...</p>
+    <div class="result-scores">
+      <div class="result-score-box">
+        <div class="result-score-name" id="resultNameA">Người A</div>
+        <div class="result-score-num" id="resultScoreA">0</div>
+      </div>
+      <div class="result-vs">vs</div>
+      <div class="result-score-box">
+        <div class="result-score-name" id="resultNameB">Người B</div>
+        <div class="result-score-num" id="resultScoreB">0</div>
+      </div>
+    </div>
+    <div class="result-actions">
+      <button class="btn-primary" onclick="document.getElementById('resultModal').classList.add('hidden')">Xem lại bàn</button>
+      <a class="btn-ghost" href="/">Về trang chủ</a>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script src="/js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Ô Ăn Quan - Trang chủ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="home-body nam-ui">
+<div class="bg-aurora" aria-hidden="true">
+    <span></span><span></span><span></span>
+</div>
+
+<main class="home-page premium-home">
+    <section class="hero hero-premium">
+        <div class="hero-copy">
+            <div class="badge premium-badge">Đồ án Web Application Development</div>
+            <h1>Ô Ăn <span>Quan</span></h1>
+            <p class="hero-lead">
+                Giao diện game dân gian hiện đại: quân cờ dạng viên sỏi, bàn gỗ 3D,
+                animation rải quân từng ô, chơi local, chơi với AI và ghép trận online qua WebSocket.
+            </p>
+
+            <div class="hero-stats" aria-label="Tính năng chính">
+                <div><b>2</b><span>người chơi</span></div>
+                <div><b>AI</b><span>đối thủ máy</span></div>
+                <div><b>WS</b><span>online realtime</span></div>
+            </div>
+
+            <div class="actions premium-actions">
+                <button id="quickStartBtn" class="btn primary btn-xl">🎮 Tạo ván local</button>
+                <button id="aiStartBtn" class="btn primary btn-xl">🤖 Chơi với AI</button>
+                <a class="btn ghost btn-xl" href="/lobby">🌐 Online / Tìm người chơi</a>
+            </div>
+        </div>
+
+        <div class="hero-preview" aria-hidden="true">
+            <div class="preview-top">
+                <span>Người A</span>
+                <b>12 - 8</b>
+                <span>Người B</span>
+            </div>
+            <div class="preview-board">
+                <i class="preview-quan"></i>
+                <i></i><i></i><i></i><i></i><i></i>
+                <i class="preview-quan"></i>
+                <i></i><i></i><i class="active"></i><i></i><i></i>
+            </div>
+            <div class="preview-card">
+                <strong>👆 Tới lượt bạn!</strong>
+                <span>Chọn ô dân sáng màu rồi chọn hướng rải.</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="cards feature-grid">
+        <article class="card feature-card">
+            <div class="feature-icon">📱</div>
+            <h2>Responsive mobile</h2>
+            <p>Layout tự co giãn cho điện thoại, có safe-area cho màn hình tai thỏ và nút điều khiển dính dưới màn hình.</p>
+        </article>
+        <article class="card feature-card">
+            <div class="feature-icon">✨</div>
+            <h2>Animation mượt</h2>
+            <p>Quân cờ bay từng viên, có hiệu ứng chọn ô, ăn quân, toast thông báo và trạng thái lượt rõ ràng.</p>
+        </article>
+        <article class="card feature-card">
+            <div class="feature-icon">🌐</div>
+            <h2>Online realtime</h2>
+            <p>Sảnh phòng, tạo mã phòng, copy mã, tìm người chơi và cập nhật bàn cờ đồng bộ qua WebSocket.</p>
+        </article>
+    </section>
+
+    <section class="card how-card">
+        <h2>Cách chơi nhanh</h2>
+        <div class="steps">
+            <div><b>1</b><span>Chọn chế độ local, AI hoặc online.</span></div>
+            <div><b>2</b><span>Chọn ô dân sáng màu ở hàng của bạn.</span></div>
+            <div><b>3</b><span>Bấm rải trái hoặc rải phải để thực hiện nước đi.</span></div>
+        </div>
+    </section>
+</main>
+
+<script>
+    document.getElementById('quickStartBtn').addEventListener('click', async () => {
+        const res = await fetch('/api/games/local', { method: 'POST' });
+        const data = await res.json();
+        if (data.gameId) {
+            window.location.href = '/game/' + data.gameId;
+        } else {
+            alert(data.message || 'Không tạo được ván chơi');
+        }
+    });
+
+    document.getElementById('aiStartBtn').addEventListener('click', async () => {
+        const res = await fetch('/api/games/ai', { method: 'POST' });
+        const data = await res.json();
+        if (data.gameId) {
+            localStorage.setItem(`gameSide_${data.gameId}`, 'A');
+            localStorage.setItem(`playerName_${data.gameId}`, 'Bạn');
+            window.location.href = '/game/' + data.gameId + '?side=A&name=Bạn';
+        } else {
+            alert(data.message || 'Không tạo được ván AI');
+        }
+    });
+</script>
+</body>
+</html>

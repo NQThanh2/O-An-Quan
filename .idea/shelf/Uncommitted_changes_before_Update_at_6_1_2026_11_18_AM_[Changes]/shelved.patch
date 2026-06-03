@@ -1,0 +1,108 @@
+Index: o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/LoginRequest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/LoginRequest.java b/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/LoginRequest.java
+new file mode 100644
+--- /dev/null	(date 1779677874000)
++++ b/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/LoginRequest.java	(date 1779677874000)
+@@ -0,0 +1,8 @@
++package com.example.oanquan.dto;
++
++import jakarta.validation.constraints.NotBlank;
++
++public record LoginRequest(
++        @NotBlank String username,
++        @NotBlank String password
++) {}
+Index: o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/MoveRequest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/MoveRequest.java b/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/MoveRequest.java
+new file mode 100644
+--- /dev/null	(date 1779677874000)
++++ b/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/MoveRequest.java	(date 1779677874000)
+@@ -0,0 +1,13 @@
++package com.example.oanquan.dto;
++
++import com.example.oanquan.model.CurrentTurn;
++import com.example.oanquan.model.Direction;
++import jakarta.validation.constraints.NotNull;
++
++public record MoveRequest(
++        Long gameId,
++        int cellIndex,
++        @NotNull Direction direction,
++        CurrentTurn playerSide,
++        String username
++) {}
+Index: o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/MoveHistoryDTO.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/MoveHistoryDTO.java b/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/MoveHistoryDTO.java
+new file mode 100644
+--- /dev/null	(date 1779677874000)
++++ b/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/MoveHistoryDTO.java	(date 1779677874000)
+@@ -0,0 +1,14 @@
++package com.example.oanquan.dto;
++
++import com.example.oanquan.model.Direction;
++import java.time.LocalDateTime;
++
++public record MoveHistoryDTO(
++        int moveOrder,
++        int cellIndex,
++        Direction direction,
++        int capturedDan,
++        int capturedQuan,
++        int capturedPoints,
++        LocalDateTime createdAt
++) {}
+Index: o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/RoomDTO.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/RoomDTO.java b/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/RoomDTO.java
+new file mode 100644
+--- /dev/null	(date 1779677874000)
++++ b/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/RoomDTO.java	(date 1779677874000)
+@@ -0,0 +1,12 @@
++package com.example.oanquan.dto;
++
++import com.example.oanquan.model.RoomStatus;
++
++public record RoomDTO(
++        Long id,
++        String roomCode,
++        String hostUsername,
++        String guestUsername,
++        RoomStatus status,
++        Long gameId
++) {}
+Index: o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/RegisterRequest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/RegisterRequest.java b/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/RegisterRequest.java
+new file mode 100644
+--- /dev/null	(date 1779677874000)
++++ b/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto/RegisterRequest.java	(date 1779677874000)
+@@ -0,0 +1,11 @@
++package com.example.oanquan.dto;
++
++import jakarta.validation.constraints.Email;
++import jakarta.validation.constraints.NotBlank;
++import jakarta.validation.constraints.Size;
++
++public record RegisterRequest(
++        @NotBlank @Size(min = 3, max = 50) String username,
++        @NotBlank @Size(min = 6, max = 100) String password,
++        @NotBlank @Email String email
++) {}
