@@ -1,0 +1,18 @@
+{
+  "name": "O An Quan",
+  "short_name": "O An Quan",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#1a0c06",
+  "theme_color": "#1a0c06",
+  "icons": [
+    {
+      "src": "/oanquan-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

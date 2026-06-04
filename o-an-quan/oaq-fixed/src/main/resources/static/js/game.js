@@ -89,11 +89,7 @@ window.addEventListener('DOMContentLoaded', () => {
 function setupMobileViewport() {
   if (!MOBILE_PERF_MODE) return;
 
-  let triedFullscreen = false;
   const tryLandscapeFullscreen = async () => {
-    if (triedFullscreen) return;
-    triedFullscreen = true;
-
     try {
       if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
         await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
@@ -107,7 +103,9 @@ function setupMobileViewport() {
     } catch (e) { /* orientation lock is not available on every browser */ }
   };
 
-  document.addEventListener('pointerdown', tryLandscapeFullscreen, { once: true, passive: true });
+  setTimeout(tryLandscapeFullscreen, 250);
+  window.addEventListener('load', tryLandscapeFullscreen, { once: true });
+  document.addEventListener('pointerdown', tryLandscapeFullscreen, { passive: true });
 }
 
 /* ── Data loading ── */
@@ -366,6 +364,8 @@ function cellClasses(cell) {
   // Áp cứng class layout của lưới cho Quan Trái (11) và Quan Phải (5)
   if (cell.index === 11) cls.push('quan-left');
   if (cell.index === 5)  cls.push('quan-right');
+  if (cell.index >= 0 && cell.index <= 4) cls.push('owner-a-cell');
+  if (cell.index >= 6 && cell.index <= 10) cls.push('owner-b-cell');
 
   if (cell.quanIndex || cell.index === 11 || cell.index === 5) cls.push('quan');
   if (!cell.dan && !cell.quan) cls.push('empty');
@@ -379,12 +379,13 @@ function cellClasses(cell) {
 function cellHtml(cell) {
   const isQuan = cell.index === 11 || cell.index === 5;
   const quanClass = cell.index === 11 ? 'quan-green' : 'quan-red';
+  const labelHtml = isQuan ? '<div class="cell-label">Quan</div>' : '';
   const quanStone = cell.quan
       ? `<span class="stone quan-stone ${quanClass}" style="--x:50%;--y:52%;--r:${cell.index === 11 ? -8 : 7}deg;--s:1;--z:60"></span>`
       : '';
 
   return `
-    <div class="cell-label">${isQuan ? 'Quan' : cell.index}</div>
+    ${labelHtml}
     <div class="stone-layer" aria-hidden="true">
       ${quanStone}
       ${renderStones(cell.dan, cell.index)}

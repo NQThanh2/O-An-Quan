@@ -177,6 +177,27 @@ a { color: inherit; text-decoration: none; }
 .turn-banner.your-turn .turn-badge { background: var(--ok-light); color: var(--ok); border-color: rgba(31,107,66,.20); }
 .turn-banner.ai .turn-badge { background: var(--blue-light); color: var(--blue); border-color: rgba(26,74,122,.18); }
 .turn-banner.ended .turn-badge { background: var(--gold-200); color: var(--brown-700); }
+.game-exit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--brown-800);
+  color: var(--gold-100);
+  border: 1px solid rgba(139,69,19,.18);
+  box-shadow: var(--shadow-sm);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-exit-btn:focus-visible {
+  outline: 3px solid rgba(240,200,80,.46);
+  outline-offset: 2px;
+}
 
 /* ======= SCORES ======= */
 .scores-row {
@@ -193,6 +214,10 @@ a { color: inherit; text-decoration: none; }
   text-align: center;
   box-shadow: var(--shadow-sm);
   transition: transform .2s, box-shadow .2s;
+}
+.score-content {
+  display: grid;
+  justify-items: center;
 }
 .score-card.active { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .score-card.mine { border-color: rgba(31,107,66,.28); background: #f3fdf7; }
@@ -2647,75 +2672,10 @@ body.perf-mobile {
 }
 
 .rotate-hint {
-  display: none;
+  display: none !important;
 }
 
-@media (max-width: 1024px) and (orientation: portrait) {
-  html.perf-mobile,
-  html.perf-mobile body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .perf-mobile .game-shell {
-    height: 100dvh;
-    overflow: hidden;
-    opacity: .12;
-    pointer-events: none;
-  }
-
-  .perf-mobile .rotate-hint {
-    position: fixed;
-    inset: 0;
-    z-index: 20000;
-    display: grid;
-    place-items: center;
-    padding: 22px;
-    background:
-            radial-gradient(circle at 50% 24%, rgba(255,213,106,.24), transparent 34%),
-            linear-gradient(155deg, #fff7de 0%, #e2b86f 100%);
-    color: var(--brown-900);
-    text-align: center;
-  }
-
-  .perf-mobile .rotate-card {
-    width: min(330px, 100%);
-    display: grid;
-    justify-items: center;
-    gap: 10px;
-    padding: 22px;
-    border-radius: 22px;
-    background: rgba(255,253,245,.92);
-    border: 1px solid rgba(139,69,19,.16);
-    box-shadow: 0 16px 38px rgba(48, 20, 5, .16);
-  }
-
-  .perf-mobile .rotate-icon {
-    width: 58px;
-    height: 42px;
-    display: grid;
-    place-items: center;
-    border-radius: 14px;
-    border: 2px solid rgba(139,69,19,.42);
-    color: var(--brown-700);
-    font-size: 28px;
-    font-weight: 900;
-  }
-
-  .perf-mobile .rotate-card b {
-    font-size: 20px;
-    font-weight: 900;
-  }
-
-  .perf-mobile .rotate-card span {
-    font-size: 13px;
-    line-height: 1.45;
-    color: var(--muted);
-  }
-}
-
-@media (max-width: 1024px) and (orientation: landscape) {
+@media (max-width: 1024px) {
   html.perf-mobile,
   html.perf-mobile body {
     width: 100%;
@@ -2782,6 +2742,35 @@ body.perf-mobile {
     align-content: center;
     padding: 6px 4px;
     border-radius: 13px;
+  }
+
+  .perf-mobile.local-mobile-controls .scores-row {
+    grid-template-rows: minmax(0, 1fr) 30px minmax(0, 1fr);
+    align-self: stretch;
+    border-radius: 18px;
+  }
+
+  .perf-mobile.local-mobile-controls #scoreCardA {
+    transform: none !important;
+    transform-origin: center;
+  }
+
+  .perf-mobile.local-mobile-controls .score-card {
+    align-content: center;
+    justify-items: center;
+  }
+
+  .perf-mobile.local-mobile-controls .score-content {
+    width: max-content;
+    max-width: none;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    justify-content: center;
+    gap: 2px;
+    white-space: nowrap;
+    transform: rotate(-90deg);
+    transform-origin: center;
   }
 
   .perf-mobile .score-name,
@@ -2857,18 +2846,32 @@ body.perf-mobile {
     min-height: 0;
     align-content: center;
     display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 5px;
     padding: 8px;
     border-radius: 14px;
+  }
+
+  .perf-mobile .turn-banner-text {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .perf-mobile .turn-banner-text b {
     font-size: 11px;
     line-height: 1.16;
     letter-spacing: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .perf-mobile .turn-badge {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
     display: inline-flex;
     width: fit-content;
     max-width: 100%;
@@ -2876,6 +2879,17 @@ body.perf-mobile {
     font-size: 9px;
     line-height: 1;
     white-space: normal;
+  }
+
+  .perf-mobile .game-exit-btn {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    min-height: 30px;
+    padding: 0 7px;
+    border-radius: 999px;
+    box-shadow: none;
+    font-size: 9px;
   }
 
   .perf-mobile .board-card {
@@ -2940,6 +2954,23 @@ body.perf-mobile {
     bottom: 4px;
     padding: 2px 5px;
     font-size: 9px;
+  }
+
+  .perf-mobile.local-mobile-controls .owner-a-cell .count-badge,
+  .perf-mobile.local-mobile-controls .owner-a-cell .more-stones {
+    transform: rotate(180deg);
+  }
+
+  .perf-mobile.local-mobile-controls .owner-a-cell .more-stones {
+    transform: translate(-50%, -50%) rotate(180deg);
+  }
+
+  .perf-mobile.local-mobile-controls .owner-b-cell .count-badge {
+    transform: none;
+  }
+
+  .perf-mobile.local-mobile-controls .owner-b-cell .more-stones {
+    transform: translate(-50%, -50%);
   }
 
   .perf-mobile .stone-layer {
@@ -3026,6 +3057,18 @@ body.perf-mobile {
 
   .perf-mobile.local-controls-flipped .move-buttons {
     transform: rotate(180deg);
+  }
+}
+
+@media (max-width: 1024px) and (orientation: portrait) {
+  .perf-mobile .game-shell {
+    position: fixed;
+    left: 0;
+    top: 100dvh;
+    width: 100dvh;
+    height: 100dvw;
+    transform: rotate(-90deg);
+    transform-origin: top left;
   }
 }
 

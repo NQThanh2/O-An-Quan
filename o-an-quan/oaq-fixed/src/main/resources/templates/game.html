@@ -4,19 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Ô Ăn Quan</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="screen-orientation" content="landscape">
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="game-body nam-ui">
 <div class="bg-aurora" aria-hidden="true"><span></span><span></span><span></span></div>
-<div class="rotate-hint" role="status" aria-live="polite">
-  <div class="rotate-card">
-    <div class="rotate-icon" aria-hidden="true">↔</div>
-    <b>Xoay ngang màn hình</b>
-    <span>Chế độ điện thoại dùng màn ngang để thấy đủ điểm, nút điều khiển và bàn cờ.</span>
-  </div>
-</div>
 <div class="game-root game-shell">
 
   <!-- TOPBAR -->
@@ -39,14 +37,17 @@
       <span id="turnBannerSub">Đồng bộ dữ liệu...</span>
     </div>
     <span class="turn-badge" id="turnBadge">...</span>
+    <a class="game-exit-btn" href="/" aria-label="Thoat ve trang chu">Tho&aacute;t</a>
   </div>
 
   <!-- SCORES -->
   <div class="scores-row">
     <div class="score-card" id="scoreCardA">
-      <div class="score-name" id="nameA">Người A</div>
-      <div class="score-num" id="scoreA">0</div>
-      <div class="score-label">điểm</div>
+      <div class="score-content">
+        <div class="score-name" id="nameA">Người A</div>
+        <div class="score-num" id="scoreA">0</div>
+        <div class="score-label">điểm</div>
+      </div>
     </div>
     <div class="vs-center">
       <div class="turn-indicator">
@@ -59,9 +60,11 @@
       <div class="msg-pill" id="turnNotice">Đang tải...</div>
     </div>
     <div class="score-card" id="scoreCardB">
-      <div class="score-name" id="nameB">Người B</div>
-      <div class="score-num score-b" id="scoreB">0</div>
-      <div class="score-label">điểm</div>
+      <div class="score-content">
+        <div class="score-name" id="nameB">Người B</div>
+        <div class="score-num score-b" id="scoreB">0</div>
+        <div class="score-label">điểm</div>
+      </div>
     </div>
   </div>
 
