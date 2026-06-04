@@ -1,5 +1,6 @@
 package com.example.oanquan.entity;
 
+import com.example.oanquan.model.AiDifficulty;
 import com.example.oanquan.model.CurrentTurn;
 import com.example.oanquan.model.GamePhase;
 import jakarta.persistence.*;
@@ -40,6 +41,13 @@ public class Game {
      */
     private boolean aiGame = false;
 
+    /**
+     * Cấp độ AI cho ván chơi với máy.
+     * EASY: dễ, MEDIUM: trung bình, HARD: khó.
+     */
+    @Enumerated(EnumType.STRING)
+    private AiDifficulty aiDifficulty = AiDifficulty.MEDIUM;
+
     @Enumerated(EnumType.STRING)
     private GamePhase phase = GamePhase.PLAYING;
 
@@ -56,30 +64,46 @@ public class Game {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
     public Room getRoom() { return room; }
     public void setRoom(Room room) { this.room = room; }
+
     public User getPlayerA() { return playerA; }
     public void setPlayerA(User playerA) { this.playerA = playerA; }
+
     public User getPlayerB() { return playerB; }
     public void setPlayerB(User playerB) { this.playerB = playerB; }
+
     public String getBoardStateJson() { return boardStateJson; }
     public void setBoardStateJson(String boardStateJson) { this.boardStateJson = boardStateJson; }
+
     public CurrentTurn getCurrentTurn() { return currentTurn; }
     public void setCurrentTurn(CurrentTurn currentTurn) { this.currentTurn = currentTurn; }
+
     public int getScoreA() { return scoreA; }
     public void setScoreA(int scoreA) { this.scoreA = scoreA; }
+
     public int getScoreB() { return scoreB; }
     public void setScoreB(int scoreB) { this.scoreB = scoreB; }
+
     public boolean isAiGame() { return aiGame; }
     public void setAiGame(boolean aiGame) { this.aiGame = aiGame; }
+
+    public AiDifficulty getAiDifficulty() { return aiDifficulty; }
+    public void setAiDifficulty(AiDifficulty aiDifficulty) { this.aiDifficulty = aiDifficulty; }
+
     public GamePhase getPhase() { return phase; }
     public void setPhase(GamePhase phase) { this.phase = phase; }
+
     public User getWinner() { return winner; }
     public void setWinner(User winner) { this.winner = winner; }
+
     public LocalDateTime getStartedAt() { return startedAt; }
     public void setStartedAt(LocalDateTime startedAt) { this.startedAt = startedAt; }
+
     public LocalDateTime getEndedAt() { return endedAt; }
     public void setEndedAt(LocalDateTime endedAt) { this.endedAt = endedAt; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

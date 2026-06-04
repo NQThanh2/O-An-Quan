@@ -12,6 +12,8 @@ public record GameStateDTO(
         String playerAUsername,
         String playerBUsername,
         boolean aiGame,
+        String aiDifficulty,
+        String aiDifficultyLabel,
         List<CellDTO> board,
         CurrentTurn currentTurn,
         int scoreA,

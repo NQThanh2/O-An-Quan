@@ -2457,3 +2457,102 @@ button:disabled {
     transition: none !important;
   }
 }
+
+/* ======= AI DIFFICULTY SELECTOR ======= */
+.ai-panel {
+  width: min(720px, 100%);
+  margin: 4px auto 16px;
+  padding: 14px;
+  border-radius: 22px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.ai-panel-title {
+  color: var(--gold-200);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  margin-bottom: 10px;
+}
+
+.ai-levels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ai-option {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ai-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ai-option span {
+  min-height: 84px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 17px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.12);
+  color: #fff;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.ai-option b {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.ai-option small {
+  font-size: 11px;
+  line-height: 1.35;
+  color: rgba(255,255,255,.72);
+}
+
+.ai-option:hover span {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.15);
+}
+
+.ai-option input:focus-visible + span {
+  outline: 3px solid rgba(255,227,139,.45);
+  outline-offset: 2px;
+}
+
+.ai-option input:checked + span {
+  background: linear-gradient(135deg, rgba(255,227,139,.28), rgba(243,168,59,.18));
+  border-color: rgba(255,227,139,.58);
+  box-shadow: 0 10px 24px rgba(212,160,48,.18), inset 0 1px 0 rgba(255,255,255,.22);
+}
+
+.ai-option input:checked + span b {
+  color: var(--gold-200);
+}
+
+@media (max-width: 560px) {
+  .ai-panel {
+    padding: 12px;
+  }
+
+  .ai-levels {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-option span {
+    min-height: auto;
+  }
+}
+

@@ -4,8 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="165c801e-1856-44be-80e4-fd3c4ea63eb3" name="Changes" comment="[add]: thêm DTO quản lý thông tin phòng chơi">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+    <list default="true" id="165c801e-1856-44be-80e4-fd3c4ea63eb3" name="Changes" comment="thêm keep ping render">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,7 +23,7 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/pvhNam/CNPM.git&quot;,
+    &quot;url&quot;: &quot;https://github.com/NQThanh2/O-An-Quan.git&quot;,
     &quot;accountId&quot;: &quot;a6b16c9c-0cbe-47f3-9998-9282154bbc75&quot;
   }
 }</component>
@@ -36,30 +36,37 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/CNPM/o-an-quan/oaq-fixed/src/main/java/com/example/oanquan/dto",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;Spring Boot.OAnQuanApplication.executor&quot;: &quot;Run&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/O-An-Quan&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\O-An-Quan" />
+      <recent name="E:\O-An-Quan\o-an-quan" />
       <recent name="D:\CNPM\o-an-quan\oaq-fixed\src\main\java\com\example\oanquan\dto" />
     </key>
   </component>
@@ -87,6 +94,9 @@
       <workItem from="1780363995846" duration="420000" />
       <workItem from="1780453984184" duration="121000" />
       <workItem from="1780464833740" duration="1302000" />
+      <workItem from="1780482405430" duration="394000" />
+      <workItem from="1780484962619" duration="948000" />
+      <workItem from="1780487308554" duration="2609000" />
     </task>
     <task id="LOCAL-00001" summary="[add]: thêm model của các quân cờ">
       <option name="closed" value="true" />
@@ -136,7 +146,31 @@
       <option name="project" value="LOCAL" />
       <updated>1780288957784</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="sửa bài">
+      <option name="closed" value="true" />
+      <created>1780482652112</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1780482652112</updated>
+    </task>
+    <task id="LOCAL-00008" summary="thêm keep ping render">
+      <option name="closed" value="true" />
+      <created>1780485657157</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1780485657158</updated>
+    </task>
+    <task id="LOCAL-00009" summary="thêm keep ping render">
+      <option name="closed" value="true" />
+      <created>1780491913705</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1780491913705</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -160,6 +194,8 @@
     <MESSAGE value="[add]: thêm DTO cho chức năng xác thực người dùng" />
     <MESSAGE value="[add]: thêm DTO xử lý nước đi và lịch sử lượt chơi" />
     <MESSAGE value="[add]: thêm DTO quản lý thông tin phòng chơi" />
-    <option name="LAST_COMMIT_MESSAGE" value="[add]: thêm DTO quản lý thông tin phòng chơi" />
+    <MESSAGE value="sửa bài" />
+    <MESSAGE value="thêm keep ping render" />
+    <option name="LAST_COMMIT_MESSAGE" value="thêm keep ping render" />
   </component>
 </project>

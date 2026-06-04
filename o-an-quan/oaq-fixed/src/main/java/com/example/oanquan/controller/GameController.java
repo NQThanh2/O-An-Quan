@@ -24,8 +24,8 @@ public class GameController {
     }
 
     @PostMapping("/ai")
-    public GameStateDTO createAiGame() {
-        return gameService.createAiGame();
+    public GameStateDTO createAiGame(@RequestParam(defaultValue = "MEDIUM") String difficulty) {
+        return gameService.createAiGame(difficulty);
     }
 
     @GetMapping("/{id}")
