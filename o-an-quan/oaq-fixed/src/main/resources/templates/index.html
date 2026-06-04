@@ -15,33 +15,38 @@
         <div class="hero-copy">
             <h1>Ô Ăn <span>Quan</span></h1>
 
+            <div class="hero-stats" aria-label="Tính năng chính">
+                <div><b>2</b><span>người chơi</span></div>
+                <div><b>AI</b><span>đối thủ máy</span></div>
+                <div><b>WS</b><span>online realtime</span></div>
+            </div>
 
-            <div class="ai-panel" aria-label="Chọn cấp độ AI">
+            <div class="ai-panel" aria-label="Chọn cấu hình AI">
                 <div class="ai-panel-title">🤖 Chọn cấp độ chơi với AI</div>
-
                 <div class="ai-levels">
                     <label class="ai-option">
                         <input type="radio" name="aiDifficulty" value="EASY">
-                        <span>
-                <b>Dễ</b>
-                <small>Tập chơi chơi là thắng uy tín</small>
-            </span>
+                        <span><b>Dễ</b><small>AI đi ngẫu nhiên, hợp cho mới chơi</small></span>
                     </label>
-
                     <label class="ai-option">
                         <input type="radio" name="aiDifficulty" value="MEDIUM" checked>
-                        <span>
-                <b>Trung bình</b>
-                <small>Cũng không quá dễ ăn đâu nha </small>
-            </span>
+                        <span><b>Trung bình</b><small>AI biết ưu tiên ăn điểm trước mắt</small></span>
                     </label>
-
                     <label class="ai-option">
                         <input type="radio" name="aiDifficulty" value="HARD">
-                        <span>
-                <b>Khó</b>
-                <small>Đố bạn thắng luôn đó </small>
-            </span>
+                        <span><b>Khó</b><small>AI dùng minimax nhìn trước nhiều nước</small></span>
+                    </label>
+                </div>
+
+                <div class="ai-panel-title ai-turn-title">🎲 Ai đi trước?</div>
+                <div class="ai-turn-options">
+                    <label class="ai-option ai-turn-option">
+                        <input type="radio" name="aiFirstTurn" value="A" checked>
+                        <span><b>🙋 Mình đi trước</b><small>Bạn là Người A và được chọn nước đầu tiên</small></span>
+                    </label>
+                    <label class="ai-option ai-turn-option">
+                        <input type="radio" name="aiFirstTurn" value="B">
+                        <span><b>🤖 AI đi trước</b><small>Máy AI là Người B và sẽ tự đi ngay khi vào trận</small></span>
                     </label>
                 </div>
             </div>
@@ -67,9 +72,8 @@
 </main>
 
 <script>
-    document.getElementById('aiStartBtn').addEventListener('click', async () => {
-        const difficulty = document.querySelector('input[name="aiDifficulty"]:checked')?.value || 'MEDIUM';
-        const res = await fetch('/api/games/ai?difficulty=' + encodeURIComponent(difficulty), { method: 'POST' });
+    document.getElementById('quickStartBtn').addEventListener('click', async () => {
+        const res = await fetch('/api/games/local', { method: 'POST' });
         const data = await res.json();
         if (data.gameId) {
             window.location.href = '/game/' + data.gameId;
@@ -79,7 +83,10 @@
     });
 
     document.getElementById('aiStartBtn').addEventListener('click', async () => {
-        const res = await fetch('/api/games/ai', { method: 'POST' });
+        const difficulty = document.querySelector('input[name="aiDifficulty"]:checked')?.value || 'MEDIUM';
+        const firstTurn = document.querySelector('input[name="aiFirstTurn"]:checked')?.value || 'A';
+        const query = new URLSearchParams({ difficulty, firstTurn });
+        const res = await fetch('/api/games/ai?' + query.toString(), { method: 'POST' });
         const data = await res.json();
         if (data.gameId) {
             localStorage.setItem(`gameSide_${data.gameId}`, 'A');

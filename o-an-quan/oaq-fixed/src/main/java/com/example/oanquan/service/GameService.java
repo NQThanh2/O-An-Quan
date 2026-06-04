@@ -11,6 +11,7 @@ import com.example.oanquan.engine.OAnQuanEngine;
 import com.example.oanquan.entity.Game;
 import com.example.oanquan.entity.Move;
 import com.example.oanquan.entity.User;
+import com.example.oanquan.model.AiDifficulty;
 import com.example.oanquan.model.CurrentTurn;
 import com.example.oanquan.model.Direction;
 import com.example.oanquan.model.GamePhase;
@@ -25,7 +26,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import com.example.oanquan.model.AiDifficulty;
+
 @Service
 public class GameService {
     private static final String AI_NAME = "Máy AI";
@@ -158,24 +159,31 @@ public class GameService {
 
     @Transactional
     public GameStateDTO createAiGame() {
-        return createAiGame(AiDifficulty.MEDIUM.name());
+        return createAiGame(AiDifficulty.MEDIUM.name(), CurrentTurn.A.name());
     }
 
     @Transactional
     public GameStateDTO createAiGame(String difficultyValue) {
+        return createAiGame(difficultyValue, CurrentTurn.A.name());
+    }
+
+    @Transactional
+    public GameStateDTO createAiGame(String difficultyValue, String firstTurnValue) {
         AiDifficulty difficulty = parseAiDifficulty(difficultyValue);
+        CurrentTurn firstTurn = parseAiFirstTurn(firstTurnValue);
 
         Game game = new Game();
         game.setBoardStateJson(toJson(engine.initBoard()));
-        game.setCurrentTurn(CurrentTurn.A);
+        game.setCurrentTurn(firstTurn);
         game.setPhase(GamePhase.PLAYING);
         game.setAiGame(true);
         game.setAiDifficulty(difficulty);
         gameRepository.save(game);
 
+        String firstTurnText = firstTurn == CurrentTurn.B ? "AI đi trước." : "Bạn đi trước.";
         return toStateDTO(
                 game,
-                "Bạn là Người A. Máy AI là Người B - cấp " + difficulty.label() + ".",
+                "Bạn là Người A. Máy AI là Người B - cấp " + difficulty.label() + ". " + firstTurnText,
                 null,
                 null,
                 null,
@@ -226,19 +234,14 @@ public class GameService {
 
 
     /* ====================================================================
-       THUẬT TOÁN AI: ĐẠI KIỆN TƯỚNG (MINIMAX + ALPHA-BETA + HEURISTIC NÂNG CAO)
+       THUẬT TOÁN AI: 3 CẤP ĐỘ DỄ / TRUNG BÌNH / KHÓ
        ==================================================================== */
-
-    /* ====================================================================
-   THUẬT TOÁN AI: 3 CẤP ĐỘ DỄ / TRUNG BÌNH / KHÓ
-   ==================================================================== */
 
     private MoveRequest chooseAiMove(Game game) {
         BoardState board = fromJson(game.getBoardStateJson());
-        AiDifficulty difficulty = game.getAiDifficulty() == null
-                ? AiDifficulty.MEDIUM
-                : game.getAiDifficulty();
+        AiDifficulty difficulty = game.getAiDifficulty() == null ? AiDifficulty.MEDIUM : game.getAiDifficulty();
 
+        // Nếu AI chưa kịp được rải quân bù tự động mà bị trống bàn, processMove() sẽ tự rải lại trước khi đi.
         if (board.isPlayerSideEmpty(CurrentTurn.B)) {
             return fallbackAiMove(game.getId());
         }
@@ -252,6 +255,7 @@ public class GameService {
 
     /**
      * AI dễ: đi ngẫu nhiên trong các nước hợp lệ.
+     * Mức này để người mới dễ thắng, AI không nhìn trước và không ưu tiên ăn quân.
      */
     private MoveRequest chooseEasyAiMove(Game game, BoardState board) {
         List<MoveRequest> moves = validMoves(game.getId(), board, CurrentTurn.B, AI_NAME);
@@ -261,7 +265,7 @@ public class GameService {
 
     /**
      * AI trung bình: xét 1 nước trước mắt.
-     * Ưu tiên nước ăn được nhiều điểm ngay.
+     * Nó ưu tiên nước ăn được nhiều điểm ngay, sau đó mới xét thế bàn đơn giản.
      */
     private MoveRequest chooseMediumAiMove(Game game, BoardState board) {
         int bestValue = Integer.MIN_VALUE;
@@ -269,20 +273,10 @@ public class GameService {
 
         for (MoveRequest move : validMoves(game.getId(), board, CurrentTurn.B, AI_NAME)) {
             try {
-                MoveResult simulated = engine.applyMove(
-                        board,
-                        move.cellIndex(),
-                        move.direction(),
-                        CurrentTurn.B
-                );
-
+                MoveResult simulated = engine.applyMove(board, move.cellIndex(), move.direction(), CurrentTurn.B);
                 int value = simulated.getCapturedPoints() * 1200
-                        + evaluateBoard(
-                        simulated.getBoard(),
-                        game.getScoreA(),
-                        game.getScoreB() + simulated.getCapturedPoints()
-                ) / 12
-                        + random.nextInt(21);
+                        + evaluateBoard(simulated.getBoard(), game.getScoreA(), game.getScoreB() + simulated.getCapturedPoints()) / 12
+                        + random.nextInt(21); // thêm chút tự nhiên, tránh AI đánh y hệt mỗi ván
 
                 if (value > bestValue) {
                     bestValue = value;
@@ -298,12 +292,11 @@ public class GameService {
         if (!bestMoves.isEmpty()) {
             return bestMoves.get(random.nextInt(bestMoves.size()));
         }
-
         return fallbackAiMove(game.getId());
     }
 
     /**
-     * AI khó: dùng minimax + alpha-beta, nhìn trước nhiều lượt.
+     * AI khó: dùng minimax + alpha-beta như bản cũ, nhìn trước nhiều lượt.
      */
     private MoveRequest chooseHardAiMove(Game game, BoardState board) {
         int bestValue = Integer.MIN_VALUE;
@@ -312,22 +305,9 @@ public class GameService {
 
         for (MoveRequest move : validMoves(game.getId(), board, CurrentTurn.B, AI_NAME)) {
             try {
-                MoveResult simulated = engine.applyMove(
-                        board,
-                        move.cellIndex(),
-                        move.direction(),
-                        CurrentTurn.B
-                );
-
-                int boardVal = minimax(
-                        simulated.getBoard(),
-                        depth - 1,
-                        Integer.MIN_VALUE,
-                        Integer.MAX_VALUE,
-                        false,
-                        game.getScoreA(),
-                        game.getScoreB() + simulated.getCapturedPoints()
-                );
+                MoveResult simulated = engine.applyMove(board, move.cellIndex(), move.direction(), CurrentTurn.B);
+                int boardVal = minimax(simulated.getBoard(), depth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, false,
+                        game.getScoreA(), game.getScoreB() + simulated.getCapturedPoints());
 
                 if (boardVal > bestValue) {
                     bestValue = boardVal;
@@ -343,24 +323,20 @@ public class GameService {
         if (!bestMoves.isEmpty()) {
             return bestMoves.get(random.nextInt(bestMoves.size()));
         }
-
         return fallbackAiMove(game.getId());
     }
 
     private List<MoveRequest> validMoves(Long gameId, BoardState board, CurrentTurn side, String username) {
         int start = side == CurrentTurn.A ? 0 : 6;
         int end = side == CurrentTurn.A ? 4 : 10;
-
         List<MoveRequest> moves = new ArrayList<>();
 
         for (int cell = start; cell <= end; cell++) {
             if (board.cell(cell).getDan() <= 0) continue;
-
             for (Direction direction : Direction.values()) {
                 moves.add(new MoveRequest(gameId, cell, direction, side, username));
             }
         }
-
         return moves;
     }
 
@@ -372,7 +348,6 @@ public class GameService {
         if (value == null || value.isBlank()) return AiDifficulty.MEDIUM;
 
         String normalized = value.trim().toUpperCase();
-
         return switch (normalized) {
             case "EASY", "DE", "DỄ" -> AiDifficulty.EASY;
             case "HARD", "KHO", "KHÓ" -> AiDifficulty.HARD;
@@ -387,15 +362,27 @@ public class GameService {
         };
     }
 
-    private int minimax(BoardState board, int depth, int alpha, int beta,
-                        boolean isMaximizing, int scoreA, int scoreB) {
+    private CurrentTurn parseAiFirstTurn(String value) {
+        if (value == null || value.isBlank()) return CurrentTurn.A;
+
+        String normalized = value.trim().toUpperCase();
+        return switch (normalized) {
+            case "B", "AI", "BOT", "MAY", "MÁY", "COMPUTER" -> CurrentTurn.B;
+            case "A", "PLAYER", "USER", "ME", "MINH", "MÌNH", "BAN", "BẠN" -> CurrentTurn.A;
+            default -> CurrentTurn.A;
+        };
+    }
+
+    private int minimax(BoardState board, int depth, int alpha, int beta, boolean isMaximizing, int scoreA, int scoreB) {
+        // Dừng khi phân tích đủ số lượt quy định hoặc game đã kết thúc
         if (depth == 0 || board.isGameOver()) {
             return evaluateBoard(board, scoreA, scoreB);
         }
 
         if (isMaximizing) {
+            // LƯỢT AI CHƠI: Cố gắng đạt điểm Heuristic cao nhất (Tìm Max)
             if (board.isPlayerSideEmpty(CurrentTurn.B)) {
-                if (scoreB >= 5) {
+                if (scoreB >= 5) { // Mô phỏng mượn quân
                     BoardState nextBoard = board.copy();
                     nextBoard.seedPlayerSide(CurrentTurn.B);
                     return minimax(nextBoard, depth, alpha, beta, isMaximizing, scoreA, scoreB - 5);
@@ -406,38 +393,24 @@ public class GameService {
 
             int maxEval = Integer.MIN_VALUE;
             boolean hasMove = false;
-
-            for (int cell = 6; cell <= 10; cell++) {
+            for (int cell = 6; cell <= 10; cell++) { // Chỉ phân tích ô dân phe B
                 if (board.cell(cell).getDan() <= 0) continue;
-
                 for (Direction dir : Direction.values()) {
                     try {
                         MoveResult res = engine.applyMove(board, cell, dir, CurrentTurn.B);
                         hasMove = true;
-
-                        int eval = minimax(
-                                res.getBoard(),
-                                depth - 1,
-                                alpha,
-                                beta,
-                                false,
-                                scoreA,
-                                scoreB + res.getCapturedPoints()
-                        );
-
+                        int eval = minimax(res.getBoard(), depth - 1, alpha, beta, false, scoreA, scoreB + res.getCapturedPoints());
                         maxEval = Math.max(maxEval, eval);
                         alpha = Math.max(alpha, eval);
-
-                        if (beta <= alpha) break;
-                    } catch (IllegalArgumentException ignored) {
-                    }
+                        if (beta <= alpha) break; // Cắt tỉa: Nhánh quá phế, khỏi cần duyệt
+                    } catch (IllegalArgumentException ignored) {}
                 }
             }
-
             if (!hasMove) return evaluateBoard(board, scoreA, scoreB);
             return maxEval;
 
         } else {
+            // LƯỢT BẠN CHƠI: AI giả định bạn đi giỏi nhất để dìm điểm nó (Tìm Min)
             if (board.isPlayerSideEmpty(CurrentTurn.A)) {
                 if (scoreA >= 5) {
                     BoardState nextBoard = board.copy();
@@ -450,51 +423,37 @@ public class GameService {
 
             int minEval = Integer.MAX_VALUE;
             boolean hasMove = false;
-
-            for (int cell = 0; cell <= 4; cell++) {
+            for (int cell = 0; cell <= 4; cell++) { // Chỉ phân tích ô dân phe A
                 if (board.cell(cell).getDan() <= 0) continue;
-
                 for (Direction dir : Direction.values()) {
                     try {
                         MoveResult res = engine.applyMove(board, cell, dir, CurrentTurn.A);
                         hasMove = true;
-
-                        int eval = minimax(
-                                res.getBoard(),
-                                depth - 1,
-                                alpha,
-                                beta,
-                                true,
-                                scoreA + res.getCapturedPoints(),
-                                scoreB
-                        );
-
+                        int eval = minimax(res.getBoard(), depth - 1, alpha, beta, true, scoreA + res.getCapturedPoints(), scoreB);
                         minEval = Math.min(minEval, eval);
                         beta = Math.min(beta, eval);
-
-                        if (beta <= alpha) break;
-                    } catch (IllegalArgumentException ignored) {
-                    }
+                        if (beta <= alpha) break; // Cắt tỉa: Bạn ăn quá đau, AI sẽ né hướng này từ trước
+                    } catch (IllegalArgumentException ignored) {}
                 }
             }
-
             if (!hasMove) return evaluateBoard(board, scoreA, scoreB);
             return minEval;
         }
     }
 
+    // HÀM ĐÁNH GIÁ (HEURISTIC) ĐÃ ĐƯỢC NÂNG CẤP ĐỂ TẠO THẾ TRẬN
     private int evaluateBoard(BoardState board, int scoreA, int scoreB) {
-        int remA = 0;
-        int remB = 0;
-        int emptyCellsA = 0;
-        int emptyCellsB = 0;
+        int remA = 0; int remB = 0;
+        int emptyCellsA = 0; int emptyCellsB = 0;
 
+        // Phân tích sân Người A (Bạn)
         for (int i = 0; i <= 4; i++) {
             int dan = board.cell(i).getDan();
             remA += dan;
             if (dan == 0) emptyCellsA++;
         }
 
+        // Phân tích sân Người B (Máy AI)
         for (int i = 6; i <= 10; i++) {
             int dan = board.cell(i).getDan();
             remB += dan;
@@ -508,12 +467,21 @@ public class GameService {
             remB = 0;
         }
 
+        // TRỌNG SỐ TÍNH ĐIỂM (Càng cao càng ưu tiên):
+
+        // Ưu tiên 1: Chênh lệch điểm số thực tế (*1000)
         int scoreDiff = (scoreB - scoreA) * 1000;
+
+        // Ưu tiên 2: Phạt nặng nếu để sân có nhiều ô trống (*80)
+        // (Nhiều ô trống = Dễ bị đối phương ăn dây chuyền hoặc dễ cạn kiệt phải mượn quân)
         int emptyDiff = (emptyCellsA - emptyCellsB) * 80;
+
+        // Ưu tiên 3: Giữ lại quân dự trữ trên sân để duy trì nhịp độ đi cờ (*10)
         int remDiff = (remB - remA) * 10;
 
         return scoreDiff + emptyDiff + remDiff;
     }
+
 
     private void validateTurn(Game game, MoveRequest request) {
         boolean onlineGame = game.getPlayerA() != null || game.getPlayerB() != null;

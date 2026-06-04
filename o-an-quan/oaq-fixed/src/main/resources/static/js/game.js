@@ -42,13 +42,7 @@ function toEngineDir(screenDir) {
 }
 
 function aiLevelLabel() {
-  if (!state) return 'Trung bình';
-  if (state.aiDifficultyLabel) return state.aiDifficultyLabel;
-
-  const difficulty = String(state.aiDifficulty || 'MEDIUM').toUpperCase();
-  if (difficulty === 'EASY') return 'Dễ';
-  if (difficulty === 'HARD') return 'Khó';
-  return 'Trung bình';
+  return (state && state.aiDifficultyLabel) ? state.aiDifficultyLabel : 'Trung bình';
 }
 
 function aiModeText() {
@@ -106,9 +100,7 @@ function render() {
   el('scoreB').textContent = state.scoreB;
 
   const nameA = state.playerAUsername || 'Người A';
-  const nameB = state.aiGame
-      ? `${state.playerBUsername || 'Máy AI'} (${aiLevelLabel()})`
-      : (state.playerBUsername || 'Người B');
+  const nameB = state.aiGame ? `${state.playerBUsername || 'Máy AI'} (${aiLevelLabel()})` : (state.playerBUsername || 'Người B');
   el('nameA').textContent = nameA;
   el('nameB').textContent = nameB;
   el('turnLabel').textContent = state.currentTurn;
@@ -152,7 +144,7 @@ function updateNoticePill() {
   let txt = '', cls = '';
   if (state.phase === 'WAITING') { txt = 'Chờ người chơi'; cls = 'waiting'; }
   else if (state.phase === 'ENDED') { const r = resultInfo(); txt = r.summary; cls = 'ended'; }
-  else if (state.aiGame && state.currentTurn === 'B') { txt = `AI ${aiLevelLabel()} đang đi`; cls = 'ai'; }
+  else if (state.aiGame && state.currentTurn === 'B') { txt = 'AI đang đi'; cls = 'ai'; }
   else if (side && side === state.currentTurn) { txt = 'Lượt bạn!'; cls = 'your-turn'; }
   else if (side && side !== state.currentTurn) { txt = 'Chờ đối thủ'; cls = 'waiting'; }
   else { txt = `Lượt ${state.currentTurn}`; cls = ''; }
@@ -480,9 +472,7 @@ function resultInfo() {
     return { title: 'Hòa!', detail: `Cả hai cùng ${state.scoreA} điểm.`, icon: '🤝', type: 'draw', summary: `Hòa ${state.scoreA}-${state.scoreB}` };
   }
   const wSide = state.scoreA > state.scoreB ? 'A' : 'B';
-  const wName = wSide === 'A'
-      ? (state.playerAUsername || 'Người A')
-      : (state.aiGame ? `${state.playerBUsername || 'Máy AI'} (${aiLevelLabel()})` : (state.playerBUsername || 'Người B'));
+  const wName = wSide === 'A' ? (state.playerAUsername || 'Người A') : (state.playerBUsername || 'Người B');
   const youWon = side && side === wSide;
   return {
     title:   youWon ? 'Bạn thắng! 🎉' : (side ? 'Bạn thua!' : `${wName} thắng!`),
@@ -504,9 +494,7 @@ function updateResultModal() {
   el('resultScoreA').textContent = state.scoreA;
   el('resultScoreB').textContent = state.scoreB;
   el('resultNameA').textContent  = state.playerAUsername || 'Người A';
-  el('resultNameB').textContent  = state.aiGame
-      ? `${state.playerBUsername || 'Máy AI'} (${aiLevelLabel()})`
-      : (state.playerBUsername || 'Người B');
+  el('resultNameB').textContent  = state.playerBUsername || 'Người B';
   el('resultCard').className     = `result-card ${r.type}`;
   if (resultShownFor !== state.gameId) {
     resultShownFor = state.gameId;
