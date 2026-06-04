@@ -5,6 +5,15 @@
 
 const gameId  = Number(window.location.pathname.split('/').pop());
 const params  = new URLSearchParams(window.location.search);
+const mediaQuery = typeof window.matchMedia === 'function' ? window.matchMedia.bind(window) : null;
+const smallScreenQuery = mediaQuery ? mediaQuery('(max-width: 700px)') : { matches: false };
+const coarsePointerQuery = mediaQuery ? mediaQuery('(pointer: coarse)') : { matches: false };
+const reducedMotionQuery = mediaQuery ? mediaQuery('(prefers-reduced-motion: reduce)') : { matches: false };
+const REDUCED_MOTION_MODE = reducedMotionQuery.matches;
+const MOBILE_PERF_MODE = smallScreenQuery.matches || coarsePointerQuery.matches;
+const LOW_MOTION_MODE = MOBILE_PERF_MODE || REDUCED_MOTION_MODE;
+const MAX_VISIBLE_STONES = MOBILE_PERF_MODE ? 10 : 30;
+const MAX_ANIMATION_STEPS = MOBILE_PERF_MODE ? 48 : 160;
 
 let state        = null;
 let selectedCell = null;
@@ -18,10 +27,10 @@ let aiTimer      = null;
 let resultShownFor = null;
 
 /* Timing (ms) */
-const T_SOW     = 480;
-const T_SETTLE  = 65;
-const T_PICKUP  = 200;
-const T_CAPTURE = 640;
+const T_SOW     = REDUCED_MOTION_MODE ? 90 : (MOBILE_PERF_MODE ? 180 : 480);
+const T_SETTLE  = REDUCED_MOTION_MODE ? 20 : (MOBILE_PERF_MODE ? 35 : 65);
+const T_PICKUP  = REDUCED_MOTION_MODE ? 70 : (MOBILE_PERF_MODE ? 110 : 200);
+const T_CAPTURE = REDUCED_MOTION_MODE ? 180 : (MOBILE_PERF_MODE ? 240 : 640);
 const T_AI      = 900;
 const WS_ENDPOINT = '/ws';
 
@@ -30,13 +39,32 @@ let playerName = params.get('name')  || localStorage.getItem(`playerName_${gameI
 if (mySide)     localStorage.setItem(`gameSide_${gameId}`, mySide);
 if (playerName) localStorage.setItem(`playerName_${gameId}`, playerName);
 
+applyPerformanceClass();
+
+function applyPerformanceClass() {
+  document.documentElement.classList.toggle('perf-mobile', LOW_MOTION_MODE);
+  if (document.body) document.body.classList.toggle('perf-mobile', LOW_MOTION_MODE);
+}
+
 function effectiveSide() {
   if (state && state.aiGame) return 'A';
   return (state && state.roomCode) ? mySide : '';
 }
 
+function isLocalMobileGame() {
+  return !!(state && MOBILE_PERF_MODE && !state.aiGame && !state.roomCode && state.phase === 'PLAYING');
+}
+
+function isLocalMobileControlsFlipped() {
+  return isLocalMobileGame() && state.currentTurn === 'A';
+}
+
+function shouldFlipMoveControls() {
+  return isLocalMobileGame() || effectiveSide() === 'B';
+}
+
 function toEngineDir(screenDir) {
-  return (effectiveSide() === 'B')
+  return shouldFlipMoveControls()
       ? (screenDir === 'LEFT' ? 'RIGHT' : 'LEFT')
       : screenDir;
 }
@@ -51,10 +79,36 @@ function aiModeText() {
 
 /* ── Bootstrap ── */
 window.addEventListener('DOMContentLoaded', () => {
+  applyPerformanceClass();
+  setupMobileViewport();
   loadGame(false);
-  loadHistory();
+  setupHistoryLazyLoad();
   connectSocket();
 });
+
+function setupMobileViewport() {
+  if (!MOBILE_PERF_MODE) return;
+
+  let triedFullscreen = false;
+  const tryLandscapeFullscreen = async () => {
+    if (triedFullscreen) return;
+    triedFullscreen = true;
+
+    try {
+      if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+      }
+    } catch (e) { /* ignore unsupported fullscreen */ }
+
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock('landscape');
+      }
+    } catch (e) { /* orientation lock is not available on every browser */ }
+  };
+
+  document.addEventListener('pointerdown', tryLandscapeFullscreen, { once: true, passive: true });
+}
 
 /* ── Data loading ── */
 async function loadGame(animate = false) {
@@ -73,7 +127,7 @@ function applyState(newState, shouldAnimate = true) {
   }
 
   const steps = newState.animationSteps || [];
-  const canAnim = shouldAnimate && state && steps.length > 0 && !animating;
+  const canAnim = shouldAnimate && state && steps.length > 0 && steps.length <= MAX_ANIMATION_STEPS && !animating;
 
   if (!canAnim) {
     state = newState; selectedCell = null;
@@ -95,6 +149,8 @@ function applyState(newState, shouldAnimate = true) {
 
 /* ── Render ── */
 function render() {
+  updateViewState();
+
   // Scores
   el('scoreA').textContent = state.scoreA;
   el('scoreB').textContent = state.scoreB;
@@ -123,7 +179,9 @@ function render() {
   el('phaseLabel').textContent = phaseText;
 
   el('roomCodeLabel').textContent = state.roomCode || (state.aiGame ? aiModeText() : 'Chơi local');
-  el('sideLabel').textContent = side
+  el('sideLabel').textContent = isLocalMobileGame()
+      ? `Chơi local · nút hướng theo Người ${state.currentTurn}`
+      : side
       ? `Bạn là Người ${side} · hàng dưới là phía bạn`
       : 'Cả hai bên';
 
@@ -135,6 +193,13 @@ function render() {
   updateBoardHint();
   updateResultModal();
   updateMsgBox();
+}
+
+function updateViewState() {
+  if (!document.body || !state) return;
+  document.body.classList.toggle('local-mobile-controls', isLocalMobileGame());
+  document.body.classList.toggle('local-controls-flipped', isLocalMobileControlsFlipped());
+  document.body.dataset.localTurn = isLocalMobileGame() ? (state.currentTurn || '') : '';
 }
 
 function updateNoticePill() {
@@ -336,9 +401,16 @@ function updateCellEl(index, boardData) {
   node.innerHTML = cellHtml(cell);
 }
 
+function updateCellClass(index, boardData = state && state.board) {
+  if (!boardData) return;
+  const cell = boardData.find(c => c.index === index);
+  const node = document.querySelector(`.cell[data-index="${index}"]`);
+  if (!cell || !node) return;
+  node.className = cellClasses(cell).join(' ');
+}
+
 function renderStones(count, idx) {
-  const mobile = window.matchMedia && window.matchMedia('(max-width: 560px)').matches;
-  const maxVisible = mobile ? 24 : 30;
+  const maxVisible = MAX_VISIBLE_STONES;
   const visible = Math.min(count, maxVisible);
   let html = '';
 
@@ -413,8 +485,11 @@ function selectCell(index) {
     else showToast('Chọn ô dân sáng màu ở hàng của bạn (ô phải có quân).');
     return;
   }
+  const previousCell = selectedCell;
   selectedCell = index;
-  renderBoard(); updateButtons(); updateHelper();
+  if (previousCell !== null && previousCell !== index) updateCellClass(previousCell);
+  updateCellClass(index);
+  updateButtons(); updateHelper(); updateBoardHint();
 }
 
 /* ── Move ── */
@@ -520,11 +595,32 @@ function triggerAi() {
 }
 
 /* ── History ── */
-async function loadHistory() {
+function setupHistoryLazyLoad() {
+  const div = el('history');
+  const panel = div && div.closest('details');
+  if (!div || !panel) { loadHistory(true); return; }
+
+  div.dataset.stale = '1';
+  panel.addEventListener('toggle', () => {
+    if (panel.open) loadHistory(true);
+  });
+  if (panel.open) loadHistory(true);
+}
+
+async function loadHistory(force = false) {
+  const div = el('history');
+  if (!div) return;
+
+  const panel = div.closest('details');
+  if (panel && !panel.open && !force) {
+    div.dataset.stale = '1';
+    return;
+  }
+
   try {
     const res   = await fetch(`/api/games/${gameId}/moves`);
     const moves = await res.json();
-    const div   = el('history');
+    div.dataset.stale = '0';
     if (!moves.length) { div.innerHTML = '<p style="color:var(--muted);font-size:13px">Chưa có nước đi nào.</p>'; return; }
     div.innerHTML = moves.slice().reverse().map(m => `
       <div class="move-line">
@@ -639,6 +735,8 @@ async function runAnimation(oldState, steps) {
 }
 
 function flyStone(fromIdx, toIdx) {
+  if (REDUCED_MOTION_MODE) return wait(T_SOW);
+
   const from = document.querySelector(`.cell[data-index="${fromIdx}"]`);
   const to   = document.querySelector(`.cell[data-index="${toIdx}"]`);
   if (!from || !to) return Promise.resolve();
@@ -685,13 +783,14 @@ function pulseCapture(index) {
   const cell = document.querySelector(`.cell[data-index="${index}"]`);
   if (!cell) return Promise.resolve();
   cell.classList.add('captured');
-  spawnParticles(cell);
+  if (!LOW_MOTION_MODE) spawnParticles(cell);
   return new Promise(resolve => setTimeout(() => { cell.classList.remove('captured'); resolve(); }, T_CAPTURE));
 }
 
 function spawnParticles(cell) {
   const rect = cell.getBoundingClientRect();
-  for (let i = 0; i < 9; i++) {
+  const particleCount = MOBILE_PERF_MODE ? 3 : 9;
+  for (let i = 0; i < particleCount; i++) {
     const p = document.createElement('span');
     p.className = 'capture-particle';
     const seed = rect.left + rect.top + i * 47;
@@ -745,14 +844,16 @@ function sc(id)  { return document.getElementById(id); }
   const oldSelectCell = selectCell;
   selectCell = function (index) {
     oldSelectCell(index);
-    if (navigator.vibrate && selectedCell === index) navigator.vibrate(18);
+    if (!LOW_MOTION_MODE && navigator.vibrate && selectedCell === index) navigator.vibrate(18);
   };
 
-  document.addEventListener('pointerdown', function (event) {
-    const target = event.target.closest('.btn, .move-btn, .reload-btn, .cell.can-select');
-    if (!target || target.disabled) return;
-    namRipple(target, event.clientX, event.clientY);
-  }, { passive: true });
+  if (!LOW_MOTION_MODE) {
+    document.addEventListener('pointerdown', function (event) {
+      const target = event.target.closest('.btn, .move-btn, .reload-btn, .cell.can-select');
+      if (!target || target.disabled) return;
+      namRipple(target, event.clientX, event.clientY);
+    }, { passive: true });
+  }
 
   function namDecorateState() {
     if (!state) return;
@@ -764,6 +865,7 @@ function sc(id)  { return document.getElementById(id); }
   }
 
   function namRipple(target, x, y) {
+    if (LOW_MOTION_MODE) return;
     const oldPosition = getComputedStyle(target).position;
     if (oldPosition === 'static') target.style.position = 'relative';
     target.style.overflow = 'hidden';
